@@ -1,0 +1,145 @@
+* Finrope lyhyesti
+** Tosi lyhyt kuvaus kaikesta
+Miljöö on keskiaikaisesti epäakkuraatti mutta biblikaalisesti akkuraatti suomi. Tässä suomessa kaikki [[https://www.museovirasto.fi/fi/kulttuuriymparisto/suomen-linnat-ja-linnoitukset][Museoviraston]] listaamat linnat ovat olemassa. Niistä hallinnoidaan maakuntaa rautanyrkillä. Pelaaja on syistä, jotka keksin myöhemmin, päättänyt että tämä hirmuhallinnointi lakkaa nyt. Hän aikoo taivaltaa jokaiselle linnalle ja kaataa niitä hallinnoivat epäkuolleet jotenkin. Matkallaan hän oppii... jotain synkkää, joka muuttaa hänen käsityksensä kaikesta lopullisesti.
+
+Linnakylät voi tutkia läpi vapaasti valitsemassaan järjestyksessä, en tiedä vielä suunnittelenko tähän jonkun optimireitin jota seuraten linnat kannattaisi kaataa, vai mukautanko linnojen vaikeustasot sen mukaan missä järjestyksessä pelaaja valitsee ne suorittaa? 
+
+** Overworld
+Kaupungit näyttävät ihan 2D-pokemoneilta. On rakennuksia, on ulkona haahuilevia hahmoja joille voi puhua, on rakenteita (esim. kyltit) joiden kanssa voi interaktoida. Rakennuksiin voi mennä sisälle, ja siellä on samat asiat saatavilla. Jos peliin toteutuu sää tai vuorokausisysteemi, niin ne pätevät vain overworldissä ulkona, rakennuksissa korkeintaan valaistus riippuu kellonajasta. Kaikki hahmot pelissä liikkuvat vuoropohjaisesti, sekä overworldissä, dungeoneissa kuin taisteluissa.
+
+Kaupunkien ulkopuolella pelaaja voi joko kävellä hitaasti tai ratsastaa hevosella nopeasti, jos on suorittanut questin josta saa palkkioksi hevosen auki. Koska atk:ssa ei tarvitse välittää oikean maailman ongelmista, kuten massasta tai tilavuudesta, niin hevonen säilytetään pelaajahahmon repussa samalla lailla kuin fillari säilytetään pokemonissa. Kaupunkien ulkopuolella voi kohdata sekä ystävällisiä hahmoja, joilla on jotain sanottavaa, annettavaa tai otettavaa pelaajalle. Lisäksi kaupunkien ulkopuolella voi kohdata "random encounttereina" linnoja hallitsevien suurmörkkien kaltaisia, heikompia alimörkkejä, joilta voi yrittää piiloutua, paeta tai joiden kanssa voi tapella.
+
+*** Kaupungin rakennukset
+Kaupungeissa on:
+- asuintaloja, joissa asuu 1-5 henkilöä, joiden kanssa voi jutella ja joilla voi olla pelaajalle itemejä tai questeja
+- majataloja, joissa long restata ja täyttää laukku potioneilla ja jollain paikallisilla erikoisitemeillä
+- mahdollinen kartano, jossa asuvan kartanonrouvan/-herran voi hurmata lahjalla tai tekemällä heille jonkun questin. Kartanojen nimet voivat perustua joko oikeaan paikallishistoriaan, tai olla ihan keksittyjä. Mä haluaisin laittaa Tampereelle jonkun historiallisesti vähän epätarkan maalaiskylän Hatanpään seutuville ja kutsua sitä Nalsalan kartanoksi. Kun kartanon omistaja on pelaajan ystävä, kartanoa voi käyttää majatalona, ja sieltä voi ostaa paikalliselta sepältä parempia aseita tai ammuksia.
+
+** Tappelumekaniikka
+Tappelu tehdään samassa näkymässä jossa pelaaja joutuu tappelemaan, oli se sitten dungeonissa tai overworldissä. Hahmot tosiaan liikkuvat vuoropohjaisesti yksi kerrallaan. Pelaaja voi käyttää nopeaa hyökkäystä, vahvaa hyökkäystä tai suojautua kilpensä taa. Vahva hyökkäys disabloi kilven pariksi vuoroksi, nopea hyökkäys ei tee juurikaan vahinkoa mutta niitä voi käyttää 2-3 kertaa vuorossa (ja yksi itemin käyttö kuluttaa vuoroa samoin), kilven takaa voi hyökätä vain nopeasti (missä kilven päällä ollessa yksi hyökkäys kuluttaa koko vuoron), ja kilven nosto/lasku (jos lasku on pelaajan itsensä suorittama eikä johdu vastapelaajan vahvasta hyökkäyksestä) kuluttavat yhden vuoron. Vahinko on riippuvainen hahmon levelistä ja jonkin verran välineistä. Pitäisikö välineitä tyypittää jossain kohtaa ja tuoda tähän mekaniikkaan jotain tyyppiperäistä kivisaksetpaperia?
+
+Pelaaja voi omistaa myös jousen ja äärellisen määrän nuolia. Aseella on kantama, ja pelissä olisi kaksi nuolityyppiä, joista toinen vastaa nopeaa hyökkäystä ja toinen, joka aukeaa myöhemmin, vastaa vahvaa hyökkästä. 
+
+Voittamisen jälkeen saa expaa, häviämisen jälkeen menettää massia ja spawnaa edelliseen paikkaan jossa on ottanut long restin.
+
+** Overworld, jatkuu
+Tieverkko kiinnostaisi mallintaa tosi tarkasti 1940-lukulaista valtatieverkkoa tapaillen, mutta luonnollisesti alaspäin skaalattuna niin että pelaaminen on hauskaa. Kaupunkien mallintamisen riittävällä tarkkuudella oikean maailman suhteen pitäisi myös onnistua. Jos peliin mallinnetaan alkuun linnakaupungit
+
+- Turku
+- Hämeenlinna
+- Raasepori
+
+  Onko tälle olemassa mitään linnakylää, vai pidetäänkö tämä linna jonain erämaalinnana? Oisko tammisaari liian tyhmä kylä laittaa tän linnakyläksi?
+  
+- Kyminlinna
+
+  Linnakylänä Kotka
+  
+- Suomenlinna
+
+  Linnakylänä Helsinki
+
+- Oulu  
+
+Pitäisikö kaivaa myös muinaislinnoja ja ottaa mukaan esim:
+- Rapola
+
+  Linnakylä Sääksmäki
+
+- Liinmaa
+
+  Linnakylä Eurajoki tai Rauma
+
+- Husholmen
+  Linnakylä Porvoo 
+
+Näitä loppuja linnakaupunkeja pitäisi käydä (mahdollisuuksien mukaan) tutkimassa lähempää ihan paikan päältä
+
+- Korsholma
+
+  Linnakylänä Vaasa
+  
+- Olavinlinna
+
+  Linnakylänä Savonlinna
+  
+- Kajaani
+- Lappeenranta
+- Hamina
+- Viipuri
+
+
+Linnakylässä, jonka linnaa hallitsee yhä suurmörkki, pyörii myös vihulaisia. Jos on päivä, vihulaiset eivät hyökkää pelaajan kimppuun, ellei pelaaja tee mitään tyhmää (onko npc:iden keskustelupuissa jotain aggressiivisia vaihtoehtoja, jotka kiinnittäisivät vartijoiden huomion?). Jos on yö, vihulaiset käyttäytyvät kuin pelaaja olisi tien päällä, ja hakeutuvat kimppuunsa, jolloin voi tapella tai paeta (olettaen että pelaajan speed > vihulaisen speed).
+
+** Linnan kaataminen
+Linnat on labyrintteja. Ensi alkuun staattisia labyrintteja, jotka jonkun täytyy suunnitella. Myöhemmin niille voisi ehkä kirjoittaa generaattorin tarjoamaan uudelleenpeluuarvoa? Linnapuzzleihin voisi integroida jotain blokkienkuljetus-puzzleja, jäätikköpuzzleja, molempia yhdisteleviä puzzleja.
+
+Linnojen kattosviiteissä odottavat loppubossit voisivat mun mielestäni olla sfinksejä, joilla on keskustelupuussa kasa arvoituksia ja jotain suomihistoriatriviaa. Vastaa oikein? Loppubossi ottaa vahinkoa. Vastaa väärin? Pelaaja ottaa vahinkoa.
+
+Toinen idea oli, että loppubossit olisivat jotain kalevalasta pöllittyjä petoja, joilla olisi standardi liikesilmukka, jota ne toistavat, ja tietyssä silmukan vaiheessa ne paljastavat jonkun heikon kohdan itsestään, johon pelaajan tulisi saada lyötyä. 
+
+Tää loppubossitappelumekaniikka tullee varmaan kirjoitettua uudelleen ja suunniteltua paremmin myöhemmin :D
+
+Tappelun voiton jälkeen linnasta lasketaan mörkkiliput ja nostetaan tilalle pelaajan lippu.
+
+** Pelin loppu
+Kun kaikki linnat on kaadettu, niin
+
+#+BEGIN_SRC basic 
+10 PRINT "ONNEA VOITIT" REM ?
+#+END_SRC
+
+En tiedä, postgamen voisi speksata joskus kun näkee tuleeko tän dokumentin speksaamasta projektista oikeasti mitään 
+
+* Pelin tarkempi toiminta
+Tässä luvussa tarkastelemme pelin toimintaa mahdollisimman yksityiskohtaisesti.
+
+** Linnakylät
+*** Helsinki
+Helsinki on pieni satamakaupunki suomenlahden rannikolla ja suomenlinnan varjossa. Koko oikean elämän kantakaupunki on muuritettu, niin että muuri kulkee Töölön tullissa ja Hämeen tullissa olevien porttien kautta. Kulosaaren ja Lauttasaaren siltoja ei ole. Näillä saarilla, kuten myös vanhassakaupungissa, voisi olla jotain linnanherran vastaista toimintaa. Näiden paikkojen kautta pelaajan pitäisi kyetä ylipuhua joku npc veneilemään hänet kantakaupunkiin. Kantakaupungissa pelaajaa odottaa joku quest, jonka suorittamalla ansaitsee Porttipassin, joka sallii tulla sisään ja poistua kaupungista edellämainittujen tullien kautta.
+
+Suomenlinna kohoaa jylhänä Helsingin kaakkoisrannikolla. Sinne ei ole reittiä maata pitkin, mutta kun pelaaja on tehnyt tarpeeksi questeja päästäkseen kauppatorille asti ja saadakseen portit läpikuljettavaan kuntoon, kauppatorille ilmestyy joku vanhassakaupungissa linnan vastaista toimintaa pyörittänyt NPC veneen kanssa, ja hän lupaa kuljettaa pelaajan pyydettäessä suomenlinnaan ja takaisin.
+
+En tunne suomenlinnan sisäisiä yksityiskohtia niin hyvin kuin pitäisi, joten speksaan linnan alapihan nyt vain muurien ja laiturille vievän meriportin ympäröimäksi alueeksi, jossa on sisäänkäynti linnadungeoniin ja mahdollisesti joku kauppa.
+
+#+CAPTION: Testitilesetillä tehty ensimmäinen luonnos siitä, miltä helsinki voisi näyttää
+#+NAME:   fig:HESULI_tilekartta
+[[./imgs/helsinki.png]]
+
+*** Turku
+Turun linnan ympäristöstä saa aika hyvän kuvan [[https://fi.wikipedia.org/wiki/Turun_linna#/media/Tiedosto:Turku_Castle_1.jpg][Wikipediasta]]. Tuollakin pitäisi käydä tekemässä vähän tutkimusta.
+
+Pelissä linna laitetaan meren rannalle ja sen kaakkoispuolelta menee koilinen-lounas suuntainen aurajoki. Linnaa ei laiteta saarelle, vaan oletetaan 2000-luvulle saavuttaessa tapahtunut maankohoaminen tapahtuneeksi. Linnan ympärillä on siistissä, 45° käännetyssä ruutukaavassa linnakylä. Paljon asukkaita, paljon asuintaloja, paljon käsityöläisiä ja heidän toimitilojaan, satamassa linnan lähistöllä satamatoimintaa. Toisessa päässä ruutukaavaa, aurajoen eteläpuolella, omalla paikallaan (tarkista vaikka turun kartastosta :D) löytyy sitten Turun Tuomiokirkko. Tuomikirkko voisi olla linnavastarintaliikkeen päämaja, joka tarjoaa normaaleille kansalaisille jotain uskonnollisia palveluita kulissina.
+
+Ei laiteta pelissä turkuun minkäänlaisia muureja. Tulkitsen wikipediaa niin, että ne muurit mitä turussa on koskaan ollut, ovat olleet linnan eikä kaupungin ympärillä.
+
+Uudenmaankadun kohdalla olevan, ruutukaavasta ulos vievän tien ja Töölön Tullin välille mallinnetaan myöhemmin Turun ja Helsingin yhdistävä maantie. Satakunnankadun kohdalle mallinnettanee Korsholmaan/Vaasaan vievä maantie. 
+
+*** Tammisaari
+Tammisaari Raaseporin linnan linnakylänä on tosi rikollinen, ja saattaa vaatia että pseudonymisoidaan tän pelin paikannimet pokemon-tyyliin :D
+
+Tammisaari on muuriton pikku kylä merenlahden rannalla. Maantie sinne haarautuu turku-helsinki -maantiestä (pitää miettiä linjataanko se maantie kuninkaantietä vai jotain nykyaikaisempaa ykköstie-linjaa pitkin (todennäköisesti kuninkaantietä, koska sillä linjalla olisi paljon enemmän pikku pitäjiä tarjoamassa sisältöä). Tie johtaa etelään jatkuvasti vesistön laidalla, varmaan jotain mielikuvituslinjaa pitkin. Pitää tarkistaa missä oikea Alinen Viipurintie kulkee ja kuinka kömpelöä siltä olisi ollut lähteä Tammisaaren suuntaan.
+
+Tammisaaresta voi ostaa paljon uniikkeja itemejä, koska se profiloituu pelissä käsityöläispitäjäksi.
+
+Tammisaaresta johtaa pitkä reitti Raaseporin linnalle, jonka tulisi näyttää pelissä erämaalinnalta. Kiinnostaisi laittaa ko. linna merenlahteen saarelle ja olla ottamatta huomioon oikeassa maailmassa tapahtunutta maannousua. 
+
+*** Hämeenlinna
+Linna sijaitsee Vanajan rannalla.
+
+Tätä pelialuetta suunnitellessa voisi varmaan hyödyntää tarinaa Kustaa III:n komennosta siirtää kaupunki nykyiselle paikalleen. Jos pelissä olisi kaksi toisistaan selkeästi eriävää (muurittamatonta) aluetta, joista eteläisemmässä asustaa pelaajaan suopeasti suhtautuvia asukkaita, ja pohjoisemmassa, linnassa kiinni olevassa asumiskeskittymässä asustaa vihulaismörkkejä. Eteläisemmässä kylässä voisi asustaa jotain sotilashenkilöitä, joita harmittaa maantierosvot jotka kiusaatavat viattomia matkaajia vanajan teillä. Hämeenlinnasta pelaaja voi ostaa (tai saada questeista palkkiona) parempia aseita/kilpiä.
+
+Hämeenlinnasta lähtee maantie etelään kohti Helsinkiä ja kaksi maantietä pohjoiseen, suuret järvet lännestä kiertävä kohti Rapolaa/Sääksmäkeä ja idästä kohti Pälkänettä. Nämä maantiet yhdistyisivät sitten tampesterissa, josta en tiedä vielä yhtään minne jatkettaisiin. Jotain tosi eeppisiä maanteitä pitkin Korsholmaan/Vaasaan, Ouluun ja Kajaaniin? 
+
+*** Kyminlinna / Kotka
+Kyminlinna sijaitsee Helsinki-Viipuri maantien varrella, ja linnan kohdalta lähtee pienempi tie etelään kohti Kotkansaarta jossa linnakylä sijaitsee. Kyminlinna saattaaa vaatia tarkempia maastotutkimuksia paikan päällä, jos mahdollista. Jos en saa niitä aikaiseksi, linnasta tullee aika simppeli uudempien linnojen mallia noudatteleva toteutus, jonka pihalla on vähän varastoja ja jotain alkeellista maataloutta.
+
+Kotkansaarelle ja hovariin voisi laittaa jotain merenkäyntiquesteja ja koulun, jossa pelaajan/hahmon voisi laittaa opiskelemaan merenkäynnin mestariksi. Kaupungista voisi ostaa myös kalatuotteita ja jotain lyhyitä puukkoja :D
+
+*** Hamina
+Tämäkin vaatinee maastotutkimuksia. Hamina kuulostaa hirveän hauskalta paikalta tutkia matkalla Helsingistä Viipuriin, mutten tiedä vielä mitä sisältöä sinne voisi laittaa, paitsi linnan ja jotain meriaiheisia questeja. Haminassa maantiet haarautuvat: itään kohti Viipuria, koiliseen kohti Lappeenrantaa. 
+
+
+
+* Credits
+Castle2.png otettu osoitteesta https://opengameart.org/content/castle-tiles-for-rpgs. Tekijä "Zabin, Hyptosis, and Danial Cook. https://opengameart.org/content/castle-tiles-for-rpgs".
