@@ -1,12 +1,14 @@
 #include <cstdio>
 #include <SDL.h>
 #include "finrope.h"
+#include "tmx_private.h"
 #include "tmxreader.h"
 
 int main (int argc, char **argv) {
 
-  printf("random number: %d\n", random_number());
-  return 0;
+  feuertmx::Map *map = feuertmx::read_map("/Users/feuer/Projects/finrope/maps/stadi.tmx");
+
+  puts("Read the whole stadi!");
 
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
