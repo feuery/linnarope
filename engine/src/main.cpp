@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdio>
 #include <SDL.h>
 #include "finrope.h"
@@ -7,6 +8,8 @@
 int main (int argc, char **argv) {
 
   feuertmx::Map *map = feuertmx::read_map("/Users/feuer/Projects/finrope/maps/stadi.tmx");
+
+  assert(map);
 
   puts("Read the whole stadi!");
 
