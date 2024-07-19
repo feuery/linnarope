@@ -58,5 +58,9 @@ namespace feuertmx {
     bool infinite;
     int nextlayerId, nextobjectid;
     std::vector<Tileset> tilesets;
+    std::vector<Layer> layers;
+
+    /*SDL_Surface *rendered_map;
+      SDL_Texture *rendered_map_tex;*/
   };
 }

@@ -232,6 +232,8 @@ namespace feuertmx {
 
 	l.chunks.push_back(chunk);
       }
+
+      m->layers.push_back(l);
     }
 
     std::string basepath(dirname(strdup(path)));
