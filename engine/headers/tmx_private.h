@@ -7,9 +7,14 @@ namespace feuertmx {
 
   class Tile {
   public:
-    unsigned int GlobalID;
+    /* there should be no > SIGNED_INT_MAX ids at this point */
+    int GlobalID;
 
     bool flipped_horizontally, flipped_vertically;
+
+    Tile (int gid, bool fhor, bool fver);
+    Tile (const Tile& t);
+  private: Tile ();
   };
 
   class Tileset {
@@ -51,7 +56,7 @@ namespace feuertmx {
   };
   
   class Map {
-  public: 
+  public:    
     double version;
     const char *tiledversion, *orientation, *renderorder;
     int width, height, tilewidth, tileheight;
@@ -60,7 +65,13 @@ namespace feuertmx {
     std::vector<Tileset> tilesets;
     std::vector<Layer> layers;
 
-    /*SDL_Surface *rendered_map;
-      SDL_Texture *rendered_map_tex;*/
+    SDL_Surface *rendered_map;
+    SDL_Texture *rendered_map_tex;
+
+    // in px, where this map is supposed to be rendered to
+    int x,y;
+
+    void renderMap(SDL_Renderer*);
+    SDL_Surface* tileAt(int globalID);    
   };
 }

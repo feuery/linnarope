@@ -4,14 +4,34 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <SDL.h>
 #include <SDL_image.h>
 #include "tmxreader.h"
-#include "SDL_rect.h"
+#include "SDL_render.h"
 #include "SDL_surface.h"
 #include "tmx_private.h"
 #include <libgen.h>
 
 namespace feuertmx {
+
+  Tile::Tile(const Tile &t) {
+    this->GlobalID = t.GlobalID;
+    this->flipped_horizontally = t.flipped_horizontally;
+    this->flipped_vertically = t.flipped_vertically;
+  }
+
+  Tile::Tile() {
+    this->GlobalID = -666;
+    this->flipped_horizontally = false;
+    this->flipped_vertically = false;
+  }
+
+  Tile::Tile (int gid, bool fhor, bool fver) {
+    this->GlobalID = gid;
+    this->flipped_horizontally = fhor;
+    this->flipped_vertically = fver;
+  }
+    
 
   Tile unwrap_tile_id(unsigned int tile) {
 
@@ -23,10 +43,10 @@ namespace feuertmx {
     bool horizontalFlip = tile & FLIPPED_HORIZONTALLY_FLAG,
       verticalFlip = tile & FLIPPED_VERTICALLY_FLAG;
     
-    unsigned int globalID  = tile & ~(  FLIPPED_HORIZONTALLY_FLAG
-				       | FLIPPED_VERTICALLY_FLAG
-				       | FLIPPED_DIAGONALLY_FLAG
-				       | ROTATED_HEXAGONAL_120_FLAG); //clear the flags
+    int globalID  = tile & ~(  FLIPPED_HORIZONTALLY_FLAG
+			       | FLIPPED_VERTICALLY_FLAG
+			       | FLIPPED_DIAGONALLY_FLAG
+			       | ROTATED_HEXAGONAL_120_FLAG); //clear the flags
 
     // if(horizontalFlip || verticalFlip) 
     //   printf("unwrapped tile %u into globalid %u, flipped horizontally: %s, flipped vertically: %s \n",
@@ -36,7 +56,8 @@ namespace feuertmx {
     // 	     verticalFlip? "true":"false");
 
 
-    return Tile { globalID, horizontalFlip, verticalFlip};
+    Tile t( globalID, horizontalFlip, verticalFlip);
+    return t;
   }
 
   // this function tries to parse tiled's csv layers into something useful without
@@ -49,7 +70,7 @@ namespace feuertmx {
     std::string csv(csv_data);
     std::string number_acc;
     std::vector<std::vector<Tile>> map;
-    std::vector<Tile> row(expected_w);
+    std::vector<Tile> row;
     int x, y;
     x = y = 0;
 
@@ -58,7 +79,7 @@ namespace feuertmx {
     // .at(0) is a '\n'
     for(int i = 1; i < csv.length(); i++) {
       auto ch = csv.at(i);
-      if (ch == ',') {
+      if (ch == ',' || (ch == '\n' && number_acc != "")) {
 	try {
 	  unsigned int num = std::stoul(number_acc);
 	  Tile t = unwrap_tile_id(num);
@@ -83,7 +104,7 @@ namespace feuertmx {
 		 && x == expected_w - 1));
 	map.push_back(row);
 	x = 0;
-	row = std::vector<Tile>(expected_w);
+	row = std::vector<Tile>();
 
       }
       else if ( ch >= '0' && ch <= '9') {
@@ -131,9 +152,16 @@ namespace feuertmx {
 
     auto image_el = tileset_el.child("image");
     
-    std::string source = tileset_el.attribute("source").as_string(),
-      img_path = basepath + "/" + source;
+    std::string source = image_el.attribute("source").as_string();
+    assert(source != "");
+    
+    auto img_path = basepath + "/" + source;
+
+    printf("trying to load %s\n", img_path.c_str());					      
+    
     src_surface = IMG_Load(img_path.c_str());
+
+    assert(src_surface);
 
     for(SDL_Surface *s: linear_tile_surfaces) {
       SDL_FreeSurface (s);
@@ -244,5 +272,106 @@ namespace feuertmx {
 
   void delete_map(Map *m) {
     delete m;
-  }    
+  }
+
+  void Map::renderMap(SDL_Renderer *r) {
+    // // yolo what a deref 
+    auto format = tilesets.at(0).linear_tile_surfaces.at(0)->format;
+
+    
+    std::vector<int> xs, ys;
+
+    for(auto &l: layers) {
+      for(auto &c: l.chunks) {
+	xs.push_back(c.x);
+	ys.push_back(c.y);
+      }
+    }
+
+    // auto lowhigh_x = std::ranges::minmax(xs),
+    //   lowhigh_y = std::ranges::minmax(ys);
+    
+    auto rmask = format->Rmask,
+      gmask = format->Gmask,
+      bmask = format->Bmask,
+      amask = format->Amask;
+
+    SDL_Surface *dst = SDL_CreateRGBSurface(0,
+					    width * tilewidth,
+					    height * tileheight,
+					    32,
+					    rmask, gmask, bmask, amask);
+
+    int successfully_blitted_tiles = 0;
+    int loop_counter = 0;
+    
+    assert(layers.size() > 0);
+    for(int l = 0; l < layers.size(); l++) {
+      auto &chunks = layers.at(l).chunks;
+      for (auto &chunk: chunks) {
+	for (int x = chunk.x; x < chunk.x + chunk.width; x++)
+	  for (int y = chunk.y; y  < chunk.y + chunk.height; y++) {
+	    int chunkX = x - chunk.x, chunkY = y - chunk.y;
+	    
+	    
+	    Tile& tile = chunk.tiles.at( x - chunk.x).at(y - chunk.y);
+	    SDL_Surface *tile_src = tileAt(tile.GlobalID);
+	    
+	    if(! tile_src) {
+	      // printf("Searching chunked tile data at %d, %d\n", chunkX, chunkY);
+	      continue;
+	    }
+
+	    SDL_Rect dst_rect { (x * tilewidth), y * tileheight, tilewidth, tileheight};
+	    auto blit_result = SDL_BlitSurface(tile_src, nullptr, dst, &dst_rect);
+
+	    assert(blit_result == 0);
+	    
+	    successfully_blitted_tiles++;
+	  }
+      }
+    }
+
+    // assert ( loop_counter > 0);
+    // assert ( successfully_blitted_tiles > 0);
+
+    rendered_map = dst;
+    rendered_map_tex = SDL_CreateTextureFromSurface(r, dst);
+  }
+
+  SDL_Surface* Map::tileAt(int globalId) {
+    if (globalId == 0 ) return nullptr;
+
+    assert(! tilesets.empty());
+    std::vector<Tileset> tsets;
+    
+    for(Tileset &tileset: tilesets) {
+      if(tileset.firstgid <= globalId) tsets.push_back(tileset);
+    }
+
+    assert(! tsets.empty());
+
+    Tileset &highest = tsets.at(0);
+
+    for(auto& tset: tsets) {
+      if(tset.firstgid > highest.firstgid) highest = tset;
+    }
+
+    return highest.tileAt(globalId - highest.firstgid);
+  }
+
+  void render_map(Map *m, SDL_Renderer *r) {
+    if(! m->rendered_map ) 
+      m->renderMap(r);
+
+    if(! m->rendered_map_tex) {
+      fputs("Map texture is null. This is bad.\n", stderr);
+      throw "";
+    }
+
+    SDL_Rect location { m->x, m->y, m->rendered_map->w, m->rendered_map->h};
+    // printf("Drawing a texture with params { %d, %d, %d, %d}\n",  m->x, m->y, m->rendered_map->w, m->rendered_map->h);
+    SDL_RenderCopy(r, m->rendered_map_tex, NULL, &location); 
+    
+  }
 }
