@@ -1,63 +1,10 @@
 {
-    "Map/SizeTest": {
-        "height": 4300,
-        "width": 2
-    },
-    "activeFile": "stadi.tmx",
+    "activeFile": "",
     "expandedProjectPaths": [
-        "."
     ],
-    "file.lastUsedOpenFilter": "All Files (*)",
-    "fileStates": {
-        "kylä.tsx": {
-            "scaleInDock": 2.1066,
-            "scaleInEditor": 1
-        },
-        "stadi.tmx": {
-            "scale": 0.0506,
-            "selectedLayer": 1,
-            "viewCenter": {
-                "x": -9179.8418972332,
-                "y": -11758.893280632412
-            }
-        },
-        "terrain.tsx": {
-            "scaleInDock": 1,
-            "scaleInEditor": 1
-        },
-        "terrain2.tsx": {
-            "scaleInDock": 1,
-            "scaleInEditor": 1
-        },
-        "terrain3 gimp.tsx": {
-            "scaleInDock": 1,
-            "scaleInEditor": 1
-        },
-        "testimappi.tmx": {
-            "scale": 1.5,
-            "selectedLayer": 5,
-            "viewCenter": {
-                "x": 222.33333333333331,
-                "y": 320.33333333333326
-            }
-        }
-    },
-    "last.imagePath": "/Users/feuer/Projects/finrope",
-    "map.fixedSize": false,
-    "map.lastUsedFormat": "tmx",
     "openFiles": [
-        "stadi.tmx"
     ],
-    "project": "kartasto.tiled-project",
+    "project": "",
     "recentFiles": [
-        "stadi.tmx",
-        "kylä.tsx",
-        "testimappi.tmx",
-        "terrain3 gimp.tsx",
-        "terrain.tsx",
-        "terrain2.tsx"
-    ],
-    "tileset.lastUsedFormat": "tsx",
-    "tileset.transparentColor": "#ffffff",
-    "tileset.useTransparentColor": true
+    ]
 }

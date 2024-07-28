@@ -143,3 +143,4 @@ Tämäkin vaatinee maastotutkimuksia. Hamina kuulostaa hirveän hauskalta paikal
 
 * Credits
 Castle2.png otettu osoitteesta https://opengameart.org/content/castle-tiles-for-rpgs. Tekijä "Zabin, Hyptosis, and Danial Cook. https://opengameart.org/content/castle-tiles-for-rpgs".
+house1.png otettu osoitteesta https://opengameart.org/content/pixel-house-and-fence, Tekijä www.instagram.com/fethalis
