@@ -213,6 +213,7 @@ namespace feuertmx {
     m->tiledversion = map_element.attribute("tiledversion").as_string();
     m->orientation = map_element.attribute("orientation").as_string();
     m->renderorder = map_element.attribute("renderorder").as_string();
+    // these are a lie when infinite-flag is true 
     m->width = map_element.attribute("width").as_int();
     m->height = map_element.attribute("height").as_int();
     m->tilewidth = map_element.attribute("tilewidth").as_int();
@@ -267,6 +268,27 @@ namespace feuertmx {
     std::string basepath(dirname(strdup(path)));
     load_tileset_sdl_surfaces(basepath, m);
 
+    if (m->infinite) {
+
+      // we don't actually support infinite maps, so... hopefully this works :D
+      
+      std::vector<int> xs, ys;
+      for(auto &l: m->layers)
+	for(auto &c: l.chunks) {
+	  xs.push_back(c.x);
+	  xs.push_back(c.x + c.width);
+
+	  ys.push_back(c.y);
+	  ys.push_back(c.y + c.height);
+	}
+
+      auto horizontal = std::ranges::minmax(xs),
+	vertical = std::ranges::minmax(ys);
+
+      m->width = horizontal.max - horizontal.min;
+      m->height = vertical.max - horizontal.min;      
+    }
+    
     return m;
   }
 
@@ -296,11 +318,17 @@ namespace feuertmx {
       bmask = format->Bmask,
       amask = format->Amask;
 
+    int w = width * tilewidth,
+      h = height * tileheight;
+
+    printf("Trying to create map with dimensions %d, %d\n", w, h);
+
     SDL_Surface *dst = SDL_CreateRGBSurface(0,
-					    width * tilewidth,
-					    height * tileheight,
+					    w, h,
 					    32,
 					    rmask, gmask, bmask, amask);
+
+    assert(dst);
 
     int successfully_blitted_tiles = 0;
     int loop_counter = 0;
@@ -311,8 +339,8 @@ namespace feuertmx {
       for (auto &chunk: chunks) {
 	for (int x = chunk.x; x < chunk.x + chunk.width; x++)
 	  for (int y = chunk.y; y  < chunk.y + chunk.height; y++) {
-	    int chunkX = x - chunk.x, chunkY = y - chunk.y;
-	    
+	    loop_counter++;
+	    int chunkX = x - chunk.x, chunkY = y - chunk.y;	    
 	    
 	    Tile& tile = chunk.tiles.at( x - chunk.x).at(y - chunk.y);
 	    SDL_Surface *tile_src = tileAt(tile.GlobalID);
@@ -332,11 +360,17 @@ namespace feuertmx {
       }
     }
 
-    // assert ( loop_counter > 0);
-    // assert ( successfully_blitted_tiles > 0);
+    assert ( loop_counter > 0);
+    assert ( successfully_blitted_tiles > 0);
 
     rendered_map = dst;
     rendered_map_tex = SDL_CreateTextureFromSurface(r, dst);
+
+    if(!rendered_map_tex) {
+      fprintf(stderr, "Making a texture of the map failed: %s\n", SDL_GetError());
+    }
+    
+    assert (rendered_map_tex);
   }
 
   SDL_Surface* Map::tileAt(int globalId) {
