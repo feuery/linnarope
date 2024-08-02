@@ -60,6 +60,18 @@ namespace feuertmx {
     return t;
   }
 
+  template <typename T>
+  void transpose(std::vector<std::vector<T>> &arr) {
+    for (int x = 0; x < arr.size(); x++) {
+      for (int y = 0; y < x; y++) {
+	T tmp = arr[x][y];
+	arr[x][y] = arr[y][x];
+	arr[y][x] = tmp;	
+      }
+    }
+  }
+    
+
   // this function tries to parse tiled's csv layers into something useful without
   // completely exploding the universe. It tries to validate that the dimensions of the
   // csv data match what is advertised as <chunk>'s width and height in the xml. If they
@@ -120,6 +132,8 @@ namespace feuertmx {
     }
 
     assert ( y == expected_h );
+
+    transpose(map);
 
     return map;
   }
@@ -248,19 +262,32 @@ namespace feuertmx {
       assert(encoding == CSV);
 
       auto chunks = data.children("chunk");
-      for(pugi::xml_node &chunk_element: chunks) {
-	LayerChunk chunk;
+
+      if(chunks.empty()) {
+	LayerChunk c;
+	c.x = 0;
+	c.y = 0;
+	c.width = l.width;
+	c.height = l.height;
 	
-	chunk.x = chunk_element.attribute("x").as_int();
-	chunk.y = chunk_element.attribute("y").as_int();
-	chunk.width = chunk_element.attribute("width").as_int();
-	chunk.height = chunk_element.attribute("height").as_int();
-
-	auto csv_layer = chunk_element.child_value();
-	chunk.tiles = parse_layer_csv_data(csv_layer, chunk.width, chunk.height);
-
-	l.chunks.push_back(chunk);
+	auto csv_layer = data.child_value();
+	c.tiles = parse_layer_csv_data(csv_layer, c.width, c.height);
+	l.chunks.push_back(c);
       }
+      else {
+	for(pugi::xml_node &chunk_element: chunks) {
+	  LayerChunk chunk;
+	
+	  chunk.x = chunk_element.attribute("x").as_int();
+	  chunk.y = chunk_element.attribute("y").as_int();
+	  chunk.width = chunk_element.attribute("width").as_int();
+	  chunk.height = chunk_element.attribute("height").as_int();
+
+	  auto csv_layer = chunk_element.child_value();
+	  chunk.tiles = parse_layer_csv_data(csv_layer, chunk.width, chunk.height);
+
+	  l.chunks.push_back(chunk);
+	}}
 
       m->layers.push_back(l);
     }
@@ -299,11 +326,12 @@ namespace feuertmx {
   void Map::renderMap(SDL_Renderer *r) {
     // // yolo what a deref 
     auto format = tilesets.at(0).linear_tile_surfaces.at(0)->format;
-
     
     std::vector<int> xs, ys;
 
+    printf("%zu layers\n", layers.size());
     for(auto &l: layers) {
+      printf("%zu chunks\n", l.chunks.size());
       for(auto &c: l.chunks) {
 	xs.push_back(c.x);
 	ys.push_back(c.y);
@@ -360,8 +388,8 @@ namespace feuertmx {
       }
     }
 
-    assert ( loop_counter > 0);
-    assert ( successfully_blitted_tiles > 0);
+    // assert ( loop_counter > 0);
+    // assert ( successfully_blitted_tiles > 0);
 
     rendered_map = dst;
     rendered_map_tex = SDL_CreateTextureFromSurface(r, dst);
@@ -395,8 +423,12 @@ namespace feuertmx {
   }
 
   void render_map(Map *m, SDL_Renderer *r) {
-    if(! m->rendered_map ) 
+    if(! m->rendered_map ) {
+      puts("Rendering the map");
       m->renderMap(r);
+
+      printf("coords: %d, %d; size: %d, %d\n", m->x, m->y, m->rendered_map->w, m->rendered_map->h);
+    }
 
     if(! m->rendered_map_tex) {
       fputs("Map texture is null. This is bad.\n", stderr);

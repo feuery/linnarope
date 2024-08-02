@@ -25,7 +25,7 @@ int main (int argc, char **argv) {
     return -1;
   }
 
-  feuertmx::Map *map = feuertmx::read_map("/Users/feuer/Projects/finrope/maps/stadi.tmx");
+  feuertmx::Map *map = feuertmx::read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-töölön tulli.tmx");
   puts("Read the whole stadi!");
 
   map->x = 0;
