@@ -31,7 +31,8 @@ int main (int argc, char **argv) {
   map->x = 0;
   map->y = 0;
 
-  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  render_map(map, renderer);
 
   bool exit = false;
   SDL_Event eventData;

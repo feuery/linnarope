@@ -184,9 +184,9 @@ namespace feuertmx {
     tile_surfaces.clear();
     linear_tile_surfaces.clear();
 
-    for(int x = 0; x < src_surface->w / tilewidth; x++) {
+    for(int y = 0; y < src_surface->h / tileheight; y++) {
       std::vector<SDL_Surface*> row;
-      for(int y = 0; y < src_surface->h / tileheight; y++) {
+      for(int x = 0; x < src_surface->w / tilewidth; x++) {
 	SDL_Surface *a_tile = SDL_CreateRGBSurface(0, tilewidth, tileheight, 32,
 						   src_surface->format->Rmask,
 						   src_surface->format->Gmask,
