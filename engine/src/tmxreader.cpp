@@ -174,7 +174,6 @@ namespace feuertmx {
     auto img_path = basepath + "/" + source;
 
     printf("trying to load %s\n", img_path.c_str());					      
-    
     src_surface = IMG_Load(img_path.c_str());
 
     assert(src_surface);
@@ -207,8 +206,8 @@ namespace feuertmx {
   // load tilesets (both tsx and their accompanying pngs) in a way
   // that they could be drawn to a window
   void load_tileset_sdl_surfaces(std::string basepath, Map *map) {
-    for(auto &tileset: map->tilesets) {
-      tileset.load_source(basepath);
+    for(Tileset *tileset: map->tilesets) {
+      tileset->load_source(basepath);
     }
   }
 
@@ -243,10 +242,10 @@ namespace feuertmx {
     auto tilesets = map_element.children("tileset");
 
     for(auto &tileset_element: tilesets) {
-      Tileset t;
-      t.firstgid = tileset_element.attribute("firstgid").as_int();
-      t.source = tileset_element.attribute("source").as_string();
-      t.name = tileset_element.attribute("name").as_string();
+      Tileset *t = new Tileset;
+      t->firstgid = tileset_element.attribute("firstgid").as_int();
+      t->source = tileset_element.attribute("source").as_string();
+      t->name = tileset_element.attribute("name").as_string();
       m->tilesets.push_back(t);
     }
 
@@ -352,13 +351,32 @@ namespace feuertmx {
     return m;
   }
 
+  Tileset::~Tileset() {
+    // puts("Freeing a ~Tileset");
+    for(SDL_Surface *srfc: linear_tile_surfaces) {
+      SDL_FreeSurface(srfc);
+    }
+    SDL_FreeSurface(src_surface);
+  }
+
+  Map::~Map() {
+    // puts("Freeing a ~map");
+
+    for(Tileset *t: tilesets){
+      delete t;
+    }
+    
+    SDL_DestroyTexture(rendered_map_tex);
+    SDL_FreeSurface(rendered_map);
+  }
+
   void delete_map(Map *m) {
     delete m;
   }
 
   void Map::renderMap(SDL_Renderer *r) {
     // yolo what a deref 
-    auto format = tilesets.at(0).linear_tile_surfaces.at(0)->format;
+    auto format = tilesets.at(0)->linear_tile_surfaces.at(0)->format;
     
     std::vector<int> xs, ys;
 
@@ -441,21 +459,21 @@ namespace feuertmx {
     if (globalId == 0 ) return nullptr;
 
     assert(! tilesets.empty());
-    std::vector<Tileset> tsets;
+    std::vector<Tileset*> tsets;
     
-    for(Tileset &tileset: tilesets) {
-      if(tileset.firstgid <= globalId) tsets.push_back(tileset);
+    for(Tileset *tileset: tilesets) {
+      if(tileset->firstgid <= globalId) tsets.push_back(tileset);
     }
 
     assert(! tsets.empty());
 
-    Tileset &highest = tsets.at(0);
+    Tileset *highest = tsets.at(0);
 
-    for(auto& tset: tsets) {
-      if(tset.firstgid > highest.firstgid) highest = tset;
+    for(auto tset: tsets) {
+      if(tset->firstgid > highest->firstgid) highest = tset;
     }
 
-    return highest.tileAt(globalId - highest.firstgid);
+    return highest->tileAt(globalId - highest->firstgid);
   }
 
   void render_map(Map *m, SDL_Renderer *r) {

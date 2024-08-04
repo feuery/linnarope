@@ -34,6 +34,8 @@ namespace feuertmx {
 
     SDL_Surface* tileAt(int x, int y);
     SDL_Surface* tileAt(int local_id);
+
+    ~Tileset();
   };
 
   enum Encoding{
@@ -106,7 +108,7 @@ namespace feuertmx {
     int width, height, tilewidth, tileheight;
     bool infinite;
     int nextlayerId, nextobjectid;
-    std::vector<Tileset> tilesets;
+    std::vector<Tileset*> tilesets;
     std::vector<Layer> layers;
     std::vector<ObjectGroup> objs;
 
@@ -117,6 +119,8 @@ namespace feuertmx {
     int x,y;
 
     void renderMap(SDL_Renderer*);
-    SDL_Surface* tileAt(int globalID);    
+    SDL_Surface* tileAt(int globalID);
+
+    ~Map();
   };
 }

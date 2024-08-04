@@ -54,6 +54,8 @@ int main (int argc, char **argv) {
     }
   }
 
+  feuertmx::delete_map(map);
+
   // Destroy the render, window and finalise SDL
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);

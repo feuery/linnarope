@@ -11,3 +11,4 @@ engine/finropedemo.dSYM/*
 engine/finropedemo
 /engine/.cache/
 /engine/compile_commands.json
+maps/*.tiled-session
