@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="32" tileheight="32" infinite="0" nextlayerid="9" nextobjectid="26">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="32" tileheight="32" infinite="0" nextlayerid="9" nextobjectid="32">
  <tileset firstgid="1" source="terrain.tsx"/>
  <tileset firstgid="65" source="linna.tsx"/>
  <tileset firstgid="321" source="house1.tsx"/>
@@ -109,5 +109,10 @@
   <object id="23" gid="321" x="519.982" y="1031.25" width="163" height="228"/>
   <object id="24" gid="321" x="712.829" y="1031.95" width="163" height="228"/>
   <object id="25" gid="321" x="872.015" y="1043.87" width="163" height="228"/>
+  <object id="27" gid="321" x="640.115" y="168.843" width="163" height="228"/>
+  <object id="28" gid="321" x="62.7783" y="143.645" width="163" height="228"/>
+  <object id="29" gid="321" x="383.685" y="181.442" width="163" height="228"/>
+  <object id="30" gid="321" x="-82.4823" y="112.518" width="163" height="228"/>
+  <object id="31" gid="321" x="-247.012" y="406.744" width="163" height="228"/>
  </objectgroup>
 </map>

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <cstring>
 #include <pugixml.hpp>
 #include <cstdio>
@@ -10,6 +11,7 @@
 #include "SDL_render.h"
 #include "SDL_surface.h"
 #include "tmx_private.h"
+#include "tmxlite/Layer.hpp"
 #include <libgen.h>
 
 namespace feuertmx {
@@ -292,6 +294,37 @@ namespace feuertmx {
       m->layers.push_back(l);
     }
 
+    auto objgroups = map_element.children("objectgroup");
+    for(auto &objgroup: objgroups) {
+      auto objs = objgroup.children("object");
+
+      ObjectGroup ogroup;
+      ogroup.id = objgroup.attribute("id").as_int();
+      ogroup.name = objgroup.attribute("name").as_string();
+      
+      for(auto &obj: objs) {
+	auto gid_attribute = obj.attribute("gid");
+	auto ellipse = obj.child("ellipse");
+
+	Object *o = gid_attribute? new ImageObject:
+	  ellipse? static_cast<Object*>(new EllipseObject): static_cast<Object*>(new BoxObject);
+
+	o->id = obj.attribute("gid").as_int();
+	o->x = obj.attribute("x").as_double();
+	o->y = obj.attribute("y").as_double();
+	o->width = obj.attribute("width").as_int();
+	o->height = obj.attribute("height").as_int();
+
+	if (gid_attribute) {
+	  ImageObject *io = static_cast<ImageObject*>(o);
+	  io->gid = obj.attribute("gid").as_int();
+	}
+
+	ogroup.objs.push_back(o);
+	m->objs.push_back(ogroup);
+      }
+    }
+
     std::string basepath(dirname(strdup(path)));
     load_tileset_sdl_surfaces(basepath, m);
 
@@ -324,7 +357,7 @@ namespace feuertmx {
   }
 
   void Map::renderMap(SDL_Renderer *r) {
-    // // yolo what a deref 
+    // yolo what a deref 
     auto format = tilesets.at(0).linear_tile_surfaces.at(0)->format;
     
     std::vector<int> xs, ys;
@@ -388,8 +421,11 @@ namespace feuertmx {
       }
     }
 
-    // assert ( loop_counter > 0);
-    // assert ( successfully_blitted_tiles > 0);
+    for( auto &ogroup: objs ) {
+      for ( auto *obj: ogroup.objs ) {
+	obj->render(dst, this);
+      }
+    }
 
     rendered_map = dst;
     rendered_map_tex = SDL_CreateTextureFromSurface(r, dst);
@@ -439,5 +475,44 @@ namespace feuertmx {
     // printf("Drawing a texture with params { %d, %d, %d, %d}\n",  m->x, m->y, m->rendered_map->w, m->rendered_map->h);
     SDL_RenderCopy(r, m->rendered_map_tex, NULL, &location); 
     
+  }
+
+
+
+  void BoxObject::render(SDL_Surface *dst, Map *m) {
+
+  }
+
+  void EllipseObject::render(SDL_Surface *dst, Map *m) {
+
+  }
+
+  void ImageObject::render(SDL_Surface *dst, Map *m) {
+    auto tile = m->tileAt(gid);
+
+    // tiled x is the same as sdl x
+    int xx = static_cast<int>(floor(x)),
+      // tiled y seems to be at the bottom of the object???
+      yy = static_cast<int>(floor(y - height)),
+      ww = static_cast<int>(floor(width)),
+      hh = static_cast<int>(floor(height));
+
+    SDL_Rect dst_rect { xx, yy, ww, hh };
+    auto blit_result = SDL_BlitSurface(tile, nullptr, dst, &dst_rect);
+
+    assert(blit_result == 0);    
+  }
+
+  Object::Object(Object &o) {
+    id = o.id;
+    name = o.name;
+    x = o.x;
+    y = o.y;
+    width = o.width;
+    height = o.height;
+  }
+
+  ImageObject::ImageObject(ImageObject &io): Object(io) {
+    gid = io.gid;
   }
 }

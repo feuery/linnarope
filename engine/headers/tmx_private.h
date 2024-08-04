@@ -3,6 +3,8 @@
 #include <vector>
 #include <SDL.h>
 
+#include "tmxreader.h"
+
 namespace feuertmx {
 
   class Tile {
@@ -54,6 +56,48 @@ namespace feuertmx {
     Encoding enc;
     std::vector<LayerChunk> chunks;
   };
+
+  class Object {
+  public:
+    int id;
+    const char *name;
+    double x, y, width, height;
+
+    virtual void render(SDL_Surface *dst, Map *m) = 0;
+
+    Object(Object &o);
+    Object() {}
+  };
+
+  class EllipseObject: public Object {
+  public:
+    void render(SDL_Surface *dst, Map *m) override;
+    EllipseObject() {}
+  };
+
+  class BoxObject: public Object {
+  public:    
+    void render(SDL_Surface *dst, Map *m) override;
+
+    BoxObject() {}
+  };
+
+  class ImageObject: public Object {
+  public:
+    int gid;
+
+    void render(SDL_Surface *dst, Map *m);
+
+    ImageObject(ImageObject &io);
+    ImageObject() {}
+  };
+
+  class ObjectGroup {
+  public:
+    int id;
+    const char *name;
+    std::vector<Object*> objs;
+  };
   
   class Map {
   public:    
@@ -64,6 +108,7 @@ namespace feuertmx {
     int nextlayerId, nextobjectid;
     std::vector<Tileset> tilesets;
     std::vector<Layer> layers;
+    std::vector<ObjectGroup> objs;
 
     SDL_Surface *rendered_map;
     SDL_Texture *rendered_map_tex;
