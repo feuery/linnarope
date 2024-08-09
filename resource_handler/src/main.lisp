@@ -13,6 +13,9 @@
     (when (equalp 3010 port)
       (setf *server* server))
     (hunchentoot:start server)
+    
+    (linnarope.migrations:migrate)
+    
     (format t "Started linnarope resource server on ~a ~%" port)
     server))
 

@@ -14,6 +14,7 @@
 	       "str"
 	       "cl-fad"
 	       "log4cl"
+	       "cl-dbi"
 	       "alexandria"
 	       "macro-html")
   :description "A resource handler for linnarope game"
@@ -22,6 +23,7 @@
 		((:module "local-lib"
 		  :components ((:file "lisp-fixup")))
 		 (:file "middleware")
+		 (:file "migrations")
 		 (:module "views"
 		  :components ((:file "root")))
 		 (:file "main")))))

@@ -14,3 +14,4 @@ engine/finropedemo
 /engine/compile_commands.json
 maps/*.tiled-session
 *.fasl
+/resource_handler/resources.db
