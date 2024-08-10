@@ -16,7 +16,9 @@
 	       "log4cl"
 	       "cl-dbi"
 	       "alexandria"
-	       "macro-html")
+	       "macro-html"
+	       "named-readtables"
+	       "cl-css")
   :description "A resource handler for linnarope game"
   :components ((:module "src"
 		:components
