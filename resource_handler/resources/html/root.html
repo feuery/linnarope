@@ -1,0 +1,19 @@
+<html>
+  <head>
+    <title>Linnarope resource manager</title>
+    <meta charset="utf-8" />
+    <link href="/css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <ul class="topbar">
+      {{#tabs}}
+      
+      <li class="{{#selected}}selected{{/selected}}">
+	<a href="{{url}}">{{name}}</a>
+      </li>
+      {{/tabs}}
+    </ul>    
+
+    {{component}}
+  </body>
+</html>

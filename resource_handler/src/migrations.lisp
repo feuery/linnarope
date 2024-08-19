@@ -1,6 +1,6 @@
 (defpackage linnarope.migrations
   (:use :cl)
-  (:import-from :linnarope.middleware :restored-stdout :@html :@db :*connection*)
+  (:import-from :linnarope.middleware :@html :@db :*connection*)
   (:export :migrate))
 
 (in-package :linnarope.migrations)
@@ -14,5 +14,5 @@
 
 	 ;; write new migrations with that format as idempotent sql
 
-	 (restored-stdout
-	  (format t "Migrated!~%")))))
+	 
+	 (format t "Migrated!~%"))))

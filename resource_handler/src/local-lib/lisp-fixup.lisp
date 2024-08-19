@@ -45,11 +45,3 @@
       (reduce #'funcall functions
               :initial-value x
               :from-end t)))
-
-(defmacro with-output-to-real-string (&rest body)
-  (let ((sb-sym (gensym)))
-    `(let* ((,sb-sym (make-string-output-stream))
-	    (*standard-output* ,sb-sym))
-       (progn
-       ,@body) 
-       (get-output-stream-string ,sb-sym))))

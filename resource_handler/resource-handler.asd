@@ -16,9 +16,8 @@
 	       "log4cl"
 	       "cl-dbi"
 	       "alexandria"
-	       "macro-html"
-	       "named-readtables"
-	       "cl-css")
+	       "cl-css"
+	       "cl-mustache")
   :description "A resource handler for linnarope game"
   :components ((:module "src"
 		:components
@@ -29,3 +28,5 @@
 		 (:module "views"
 		  :components ((:file "root")))
 		 (:file "main")))))
+
+;; (asdf:make "linnarope-resource-handler") 

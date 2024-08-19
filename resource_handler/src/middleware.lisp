@@ -1,29 +1,59 @@
 (defpackage linnarope.middleware
   (:use :cl)
   (:import-from :lisp-fixup :with-output-to-real-string)
-  (:export :restored-stdout :@html :@db :*connection*))
+  (:import-from :easy-routes :defroute)
+  (:export :deftab :tabs :@html :@db :*connection*))
 
 (in-package :linnarope.middleware)
 
-(defvar *stdout* nil)
+(defun alist-get (alist key)
+  (cdr (assoc key alist)))
 
-(defun doctype (body)
-  (format nil "<!doctype html>~%~a" body))
+(defvar *resource-path* (pathname (format nil "~aresources/html/" (asdf:system-source-directory "linnarope-resource-handler"))))
 
-(defun @html (next)
-  (let ((*stdout* *standard-output*))
-    (doctype
-     (with-output-to-real-string
-	 (funcall next)))))
+(defun html-resource (filename)
+  (lisp-fixup:slurp-utf-8 
+   (pathname (format nil "~a/~a" *resource-path* filename))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar tabs (make-hash-table :test 'equal)
+    "A list of tabs, keyed by symbol and valued by their urls"))
+
+(defun tabs-for-view (current-tab-url tabs)
+  (mapcar (lambda (cell)
+	    (destructuring-bind (sym . url) cell
+	      `((:name . ,(string-capitalize (symbol-name sym)))
+		(:selected . ,(string= current-tab-url url))
+		(:url  . ,url))))
+	  
+	  (alexandria:hash-table-alist
+	   tabs)))
+
+(defun @html (current-tab-url next)
+  "Expects next to return '((:a . alist) (:of . data)) that populates {{mustache-placeholders}} in /resources/html. :component is a key that specifies which template is chosen to be set up inside root.html"
+  (let* ((component-data (funcall next))
+	 (component (alist-get component-data :component))
+	 (mustache:*escape-tokens* nil)    
+	 (populated-html (mustache:render* (html-resource "root.html") (cons
+									`(:tabs . ,(tabs-for-view current-tab-url tabs))
+									(cons
+									 (cons :component (mustache:render* (html-resource component) component-data))
+									 component-data)))))
+    (setf (hunchentoot:content-type*) "text/html")
+    populated-html))
+
+(defmacro deftab (varlist &rest contents)
+  (destructuring-bind (tab-symbol tab-url component-filename) varlist
+    (setf (gethash tab-symbol tabs) tab-url)
+    `(defroute ,tab-symbol (,tab-url :method :get :decorators ((@html ,tab-url) @db)) ()
+       (cons (cons :component ,component-filename)
+	     (progn
+	       ,@contents)))))
+
 
 (defun @css (next)
   (setf (hunchentoot:content-type*) "text/css")
   (funcall next))
-
-(defmacro restored-stdout (&rest body)
-  "Restores (format nil) to output to stdout inside a @html handler"
-  `(let ((*standard-output* (or *stdout* *standard-output*)))
-     ,@body))
 
 ;; database
 (defvar *system-source-directory*
