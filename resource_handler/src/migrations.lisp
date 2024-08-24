@@ -10,9 +10,6 @@
 
 (defun migrate ()
   (@db (lambda ()
-	 (exec "CREATE TABLE IF NOT EXISTS map ( ID INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT NOT NULL)")
-
-	 ;; write new migrations with that format as idempotent sql
-
+	 (exec "CREATE TABLE IF NOT EXISTS map ( ID INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, file_data BLOB NOT NULL)")
 	 
 	 (format t "Migrated!~%"))))

@@ -1,3 +1,20 @@
-<p>
-  List of {{map-count}} maps
-</p>
+<div>
+
+	<h4>Maps in system </h4>
+	<ul class="map-list">
+
+		{{#maps}}
+		<li> <a href="/map/{{id}}"> {{name}} </a> </li>
+		{{/maps}}
+
+	</ul>
+
+	<h4>New map</h4>
+	<form enctype="multipart/form-data" method="post" action="/insert-map">
+		<label>
+			Location
+			<input type="file" name="new-map-path" id="new-map-path" />
+		</label>
+		<input type="submit" />
+	</form>
+</div>
