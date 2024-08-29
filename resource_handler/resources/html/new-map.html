@@ -1,0 +1,26 @@
+<div>
+  <h3>{{path}}</h3>
+  <ul class="file-browser">
+    {{#files}}
+    <li>
+      {{#dir}}
+      <a href="/new-map?path={{file-path}}" class="{{#up}}up-arrow {{/up}} dir">
+	{{#up}}
+	&DoubleUpArrow; UP
+	{{/up}}
+
+	{{^up}}
+	  {{file-path}}
+	{{/up}}
+      </a>
+      {{/dir}}
+
+      {{^dir}}
+      <p class="file"> {{file-path }} </p>
+      {{/dir}}
+    </li>
+    {{/files}}
+  </ul>
+
+  <a href="/add-map-path?path={{path}}"> Add {{path}} as map directory </a>
+</div>

@@ -1,6 +1,6 @@
 (defpackage linnarope.views.root
   (:use :cl)
-  (:import-from :linnarope.middleware :@db :*connection* :@html :@css :deftab)
+  (:import-from :linnarope.middleware :@db :*connection* :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
   (:import-from :lisp-fixup :with-output-to-real-string))
 
@@ -19,7 +19,26 @@
 		(".topbar li.selected"
 		 :border-bottom "5px solid black")
 		(label
-		 :display "block"))))
+		 :display "block")
+
+		;; file browser css
+		(.file-browser
+		 :display "grid"
+		 :grid-template-columns "repeat(3, 1fr)"
+		 :gap "5px"
+		 :height "fit-content")
+
+		(".file-browser li"
+		 :list-style "none")
+		(".file-browser li:nth-child(odd)"
+		 :grid-column "1")
+		(".file-browser li:nth-child(even)"
+		 :grid-column "2")
+		(".file-browser li .dir"
+		 :border-bottom "2px solid #3a00ff")
+
+		(".file-browser li .file"
+		 :border-bottom "2px solid #ff5700"))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
@@ -35,15 +54,26 @@
 			   "SELECT * FROM map"))))))
       `((:maps . ,maps))))
 
-(deftab (sprites "/sprites" "sprites.html")
-    '((:sprite-data . "lolz")))
+(defsubtab (current-map "/map/:id" "current_map.html" maps) ()
+  `((:map-id . ,id)))
+
+(defsubtab (new-map "/new-map" "new-map.html" maps) (&get path)
+  (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))
+    `((:path . ,path)
+      (:files . ,(cons `((:file-path . ,(uiop:pathname-parent-directory-pathname path))
+			 (:up . t)
+			 (:dir . t))
+		      (mapcar (lambda (f)
+				`((:file-path . ,f)
+				  (:dir . ,(cl-fad:directory-pathname-p f))))
+			      (cl-fad:list-directory path)))))))
 
 (defroute root ("/" :method :get) ()
   (easy-routes:redirect 'maps))
 
-
-(defroute new-map-handler ("/insert-map" :method :post :decorators (@db)) (&post new-map-path)
-  (destructuring-bind (tmp-file filename mime) new-map-path
-    (let ((file-blob (lisp-fixup:slurp-utf-8 tmp-file)))
-      (cl-dbi:execute (cl-dbi:prepare *connection* "INSERT INTO map (name, file_data) VALUES (?,?)") (list filename file-blob)) 
-      (easy-routes:redirect 'maps))))
+(defroute new-map-handler ("/add-map-path" :method :get :decorators (@db)) (&get path)
+  (let* ((files (cl-fad:list-directory path)))
+    (setf (hunchentoot:content-type*) "text/html")
+    (if (and (some (lisp-fixup:compose (lisp-fixup:partial #'string= "tmx") #'pathname-type) files))
+	"<p>ONNEA TMX LÖYTYI</p>"
+	"<p>tmx ei löytynyt :/</p>")))

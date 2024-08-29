@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :lisp-fixup :with-output-to-real-string)
   (:import-from :easy-routes :defroute)
-  (:export :deftab :tabs :@html :@db :*connection*))
+  (:export :defsubtab :deftab :tabs :@html :@db :*connection*))
 
 (in-package :linnarope.middleware)
 
@@ -49,6 +49,14 @@
        (cons (cons :component ,component-filename)
 	     (progn
 	       ,@contents)))))
+
+(defmacro defsubtab (varlist http-varlist &rest contents)
+  (destructuring-bind (route-symbol route-url component-filename parent-tab) varlist
+    (let ((tab-url (gethash parent-tab tabs)))
+      `(defroute ,route-symbol (,route-url :method :get :decorators ((@html ,tab-url) @db)) ,http-varlist
+	 (cons (cons :component ,component-filename)
+	       (progn
+		 ,@contents))))))
 
 
 (defun @css (next)
