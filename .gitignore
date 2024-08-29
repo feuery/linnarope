@@ -15,3 +15,4 @@ engine/finropedemo
 maps/*.tiled-session
 *.fasl
 /resource_handler/resources.db
+*.dylib

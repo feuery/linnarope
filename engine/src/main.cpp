@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <SDL.h>
 #include "finrope.h"
-#include "tmx_private.h"
 #include "tmxreader.h"
 
 int main (int argc, char **argv) {
@@ -25,11 +24,8 @@ int main (int argc, char **argv) {
     return -1;
   }
 
-  feuertmx::Map *map = feuertmx::read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-töölön tulli.tmx");
+  Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-töölön tulli.tmx");
   puts("Read the whole stadi!");
-
-  map->x = 0;
-  map->y = 0;
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   render_map(map, renderer);
@@ -39,10 +35,7 @@ int main (int argc, char **argv) {
   while (!exit) {
     SDL_RenderClear(renderer);
 
-    render_map(map, renderer);
-    // map->x--;
-    // map->y--;
-      
+    render_map(map, renderer);      
     SDL_RenderPresent(renderer);
        
     while (SDL_PollEvent(&eventData)) {
@@ -54,7 +47,7 @@ int main (int argc, char **argv) {
     }
   }
 
-  feuertmx::delete_map(map);
+  delete_map(map);
 
   // Destroy the render, window and finalise SDL
   SDL_DestroyRenderer(renderer);
