@@ -3,8 +3,36 @@
 #include <SDL.h>
 #include "finrope.h"
 #include "tmxreader.h"
+#include <getopt.h>
+
+enum continue_state { CONTINUE, EXIT };
+
+continue_state handle_cli(int argc, char **argv) {
+  int c;
+  static option opts[] = {
+    {"map-file", required_argument, nullptr, 'm'},
+    {"png-output-file", required_argument, nullptr, 'p'},
+    { nullptr, 0, nullptr, 0}};
+
+  while ((c = getopt_long(argc, argv, "m:p:", opts, nullptr)) != -1) {
+    switch(c) {
+    case 'm':
+      printf("map-file found %s\n", optarg);
+      break;
+    case 'p':
+      printf("png-output-file discovered: %s\n", optarg);
+      break;
+    }
+  }
+
+  return EXIT;
+}
 
 int main (int argc, char **argv) {
+
+  if (handle_cli(argc, argv) == EXIT) {
+    return 0;
+  }
 
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     SDL_Log("SDL_Init Error: %s\n", SDL_GetError());

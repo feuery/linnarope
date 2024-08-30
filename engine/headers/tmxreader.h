@@ -7,5 +7,3 @@ extern "C" {
   void render_map(Map *m, SDL_Renderer *r);
   void delete_map(Map*);
 }
-
-
