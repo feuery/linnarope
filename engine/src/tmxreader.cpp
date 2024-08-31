@@ -530,3 +530,7 @@ Object::Object(Object &o) {
 ImageObject::ImageObject(ImageObject &io): Object(io) {
   gid = io.gid;
 }
+
+SDL_Surface* map_surface(Map* m) {
+  return m->rendered_map;
+}

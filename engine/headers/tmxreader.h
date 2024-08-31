@@ -6,4 +6,5 @@ extern "C" {
   Map* read_map(const char *path);
   void render_map(Map *m, SDL_Renderer *r);
   void delete_map(Map*);
+  SDL_Surface* map_surface(Map* m);
 }

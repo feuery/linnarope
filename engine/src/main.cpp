@@ -1,56 +1,112 @@
 #include <cassert>
 #include <cstdio>
 #include <SDL.h>
+#include "SDL_video.h"
 #include "finrope.h"
+#include <string>
 #include "tmxreader.h"
 #include <getopt.h>
+#include <SDL_image.h>
 
-enum continue_state { CONTINUE, EXIT };
+struct cli_result {
+  std::string map_path;
+  std::string png_path;
 
-continue_state handle_cli(int argc, char **argv) {
+  // returns true if there's anything to process and the app should thus close after returning here
+  bool process();
+};
+
+SDL_Window* createWindow(bool hidden = false) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
+    return nullptr;
+  }
+
+  SDL_Window* window = SDL_CreateWindow("Hello World SDL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, hidden? SDL_WINDOW_HIDDEN: 
+					SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  if (window == nullptr) {
+    SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
+    return nullptr;
+  }
+
+  return window;
+}
+
+SDL_Renderer* createRenderer(SDL_Window *window) {
+  SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+  if (renderer == nullptr) {
+    SDL_Log("SDL_CreateRenderer Error: %s\n", SDL_GetError());
+    return nullptr;
+  }
+
+  return renderer;
+}
+
+bool cli_result::process() {
+  if(map_path != "" && png_path != "") {
+
+    SDL_Window *w = createWindow(true);
+    SDL_Renderer *r = createRenderer(w);
+    
+    Map *m = read_map(map_path.c_str());
+    render_map(m, r);
+
+    IMG_SavePNG(map_surface(m), png_path.c_str());
+
+    printf("Saved %s as %s\n", map_path.c_str(), png_path.c_str());
+    
+    // tallennetaan karttaa png:ksi
+    return true;
+  }
+  else if (map_path != "" && png_path == "") {
+    // tulostetaan kartan metadata lispillä luettavassa muodossa
+    return true;
+  }
+
+  return false;
+}
+
+cli_result handle_cli(int argc, char **argv) {
   int c;
   static option opts[] = {
     {"map-file", required_argument, nullptr, 'm'},
     {"png-output-file", required_argument, nullptr, 'p'},
     { nullptr, 0, nullptr, 0}};
 
+  std::string map = "",
+    png = "";
+  
+
   while ((c = getopt_long(argc, argv, "m:p:", opts, nullptr)) != -1) {
     switch(c) {
     case 'm':
       printf("map-file found %s\n", optarg);
+      map = std::string(optarg);
       break;
     case 'p':
       printf("png-output-file discovered: %s\n", optarg);
+      png = std::string(optarg);
       break;
     }
   }
 
-  return EXIT;
+  return { map, png};
 }
 
 int main (int argc, char **argv) {
 
-  if (handle_cli(argc, argv) == EXIT) {
+  auto cliresult = handle_cli(argc, argv);
+
+  if(cliresult.process()) {
     return 0;
   }
 
-  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-    SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
-    return -1;
-  }
+  SDL_Window *window = createWindow();
 
-  SDL_Window* window = SDL_CreateWindow("Hello World SDL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-  if (window == nullptr) {
-    SDL_Log("SDL_CreateWindow Error: %s\n", SDL_GetError());
-    return -1;
-  }
+  assert(window);
 
-  // Render creation
-  SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (renderer == nullptr) {
-    SDL_Log("SDL_CreateRenderer Error: %s\n", SDL_GetError());
-    return -1;
-  }
+  auto *renderer = createRenderer(window);
+  assert(renderer);
 
   Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-töölön tulli.tmx");
   puts("Read the whole stadi!");
