@@ -1,5 +1,6 @@
 <div>
   <h3>{{path}}</h3>
+  <p class="help"> Click either on a directory to move there or a tmx file to add it to the resource database</p>
   <ul class="file-browser">
     {{#files}}
     <li>
@@ -16,11 +17,14 @@
       {{/dir}}
 
       {{^dir}}
-      <p class="file"> {{file-path }} </p>
+        {{#tmx?}}
+          <p class="file tmx"> <a href="/choose-map?tmx-file={{file-path}}"> {{file-path }} </a> </p>
+	{{/tmx?}}
+	{{^tmx?}}
+          <p class="file"> {{file-path }} </p>
+	{{/tmx?}}
       {{/dir}}
     </li>
     {{/files}}
   </ul>
-
-  <a href="/add-map-path?path={{path}}"> Add {{path}} as map directory </a>
 </div>

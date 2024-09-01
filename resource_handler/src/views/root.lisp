@@ -28,6 +28,9 @@
 		 :gap "5px"
 		 :height "fit-content")
 
+		(.tmx
+		 :background-color "#ff000033")
+		 
 		(".file-browser li"
 		 :list-style "none")
 		(".file-browser li:nth-child(odd)"
@@ -43,9 +46,9 @@
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
 			  (let* ((id (getf row :id))
-				 (filename (getf row :|name|)))
+				 (tmx-path (getf row :|tmx_path|)))
 			    `((:id . ,id)
-			      (:name . ,filename))))
+			      (:name . ,tmx-path))))
 			
 			(cl-dbi:fetch-all
 			 (cl-dbi:execute
@@ -65,15 +68,19 @@
 			 (:dir . t))
 		      (mapcar (lambda (f)
 				`((:file-path . ,f)
+				  (:tmx? . ,(equalp (pathname-type f) "tmx"))
 				  (:dir . ,(cl-fad:directory-pathname-p f))))
 			      (cl-fad:list-directory path)))))))
 
 (defroute root ("/" :method :get) ()
   (easy-routes:redirect 'maps))
 
-(defroute new-map-handler ("/add-map-path" :method :get :decorators (@db)) (&get path)
-  (let* ((files (cl-fad:list-directory path)))
-    (setf (hunchentoot:content-type*) "text/html")
-    (if (and (some (lisp-fixup:compose (lisp-fixup:partial #'string= "tmx") #'pathname-type) files))
-	"<p>ONNEA TMX LÖYTYI</p>"
-	"<p>tmx ei löytynyt :/</p>")))
+(defroute map-add-handler ("/choose-map" :method :get :decorators (@db)) (&get tmx-file)
+  (if tmx-file
+      (progn 
+	(linnarope.db.maps:save-map-to-db! *connection* tmx-file)
+	(easy-routes:redirect 'maps))
+      (progn
+	(setf (hunchentoot:content-type*) "text/html")
+	(setf (hunchentoot:return-code*) 400)
+	"<p>tmx-files is nil</p>")))

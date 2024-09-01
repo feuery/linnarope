@@ -25,6 +25,8 @@
 		  :components ((:file "lisp-fixup")))
 		 (:file "middleware")
 		 (:file "migrations")
+		 (:module "db"
+		  :components ((:file "maps")))
 		 (:module "views"
 		  :components ((:file "root")))
 		 (:file "main")))))

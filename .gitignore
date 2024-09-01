@@ -16,3 +16,5 @@ maps/*.tiled-session
 *.fasl
 /resource_handler/resources.db
 *.dylib
+/finropedemo
+*.tmx.*.png
