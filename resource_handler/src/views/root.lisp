@@ -41,7 +41,13 @@
 		 :border-bottom "2px solid #3a00ff")
 
 		(".file-browser li .file"
-		 :border-bottom "2px solid #ff5700"))))
+		 :border-bottom "2px solid #ff5700")
+
+
+		;; current-map css
+		(.map-img
+		 :width "40%"
+		 :height "40%"))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
@@ -84,3 +90,14 @@
 	(setf (hunchentoot:content-type*) "text/html")
 	(setf (hunchentoot:return-code*) 400)
 	"<p>tmx-files is nil</p>")))
+
+(defroute map-img ("/map/:id/img" :method :get :decorators (@db)) ()
+  (let* ((q (cl-dbi:prepare *connection* "SELECT png_path FROM map WHERE ID = ?"))
+	 (rs (cl-dbi:fetch-all (cl-dbi:execute q (list id))))
+	 (row (first rs))
+	 (png-file-path (getf row :|png_path|))
+	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
+    (setf (hunchentoot:content-type*) "image/png")
+    bytes))
+    
+	 
