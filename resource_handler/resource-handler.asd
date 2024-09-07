@@ -16,6 +16,7 @@
 	       "log4cl"
 	       "cl-dbi"
 	       "alexandria"
+	       "xmls"
 	       "cl-css"
 	       "cl-mustache")
   :description "A resource handler for linnarope game"
