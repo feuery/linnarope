@@ -1,6 +1,7 @@
 (defpackage linnarope.tmx
   (:use :cl)
   (:import-from :lisp-fixup :slurp-utf-8 :partial :compose)
+  (:export :read-tmx)
   (:documentation "A port lisp port of the tmxreader.cpp found somewhere in this repo"))
 
 (in-package :linnarope.tmx)

@@ -26,6 +26,7 @@
 		  :components ((:file "lisp-fixup")))
 		 (:file "middleware")
 		 (:file "migrations")
+		 (:file "tmxreader")
 		 (:module "db"
 		  :components ((:file "maps")))
 		 (:module "views"
