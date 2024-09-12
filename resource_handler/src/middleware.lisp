@@ -72,8 +72,10 @@
 
 (defun @db (next)
   (dbi:with-connection (conn :sqlite3 :database-name (format nil "~aresources.db" *system-source-directory*))
-    (let ((*connection* conn))
-      (funcall next))))
+    ;; why is this not committing?
+    ;; (dbi:with-transaction conn 
+      (let ((*connection* conn))
+	(funcall next))))
 
 ;; (getf (first 
 ;;        (@db (lambda ()

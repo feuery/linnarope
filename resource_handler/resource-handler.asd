@@ -18,7 +18,8 @@
 	       "alexandria"
 	       "xmls"
 	       "cl-css"
-	       "cl-mustache")
+	       "cl-mustache"
+	       "parse-number")
   :description "A resource handler for linnarope game"
   :components ((:module "src"
 		:components

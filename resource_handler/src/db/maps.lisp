@@ -25,6 +25,10 @@
   (let ((v (assoc key alist :test 'equalp)))
     (cond ((equalp expected-type :int) (parse-integer (cdr v)))
 	  ((equalp expected-type :sqlite-bool) (parse-integer (cdr v)))
+	  ((equalp expected-type :lisp-bool) (if (cdr v)
+						 1
+						 0))
+	  ((equalp expected-type :double) (parse-number:parse-number (cdr v)))
 	  (t (cdr v)))))
 
 (defun insert-map-get-id (connection tmx-path png-path tmx-metadata)
@@ -81,14 +85,36 @@ VALUES
 	     (get-alist layer "width" :expected-type :int)
 	     (get-alist layer "height" :expected-type :int)
 	     map-id)))))
+
+(defun insert-objects-and-groups (connection map-id tmx-metadata)
+  (let ((groups (get-alist tmx-metadata :object-groups)))
+    (dolist (object-group groups)
+      (let* ((group-id (get-alist object-group "id"))
+	     (name (get-alist object-group "name")))
+	(cl-dbi:execute 
+	 (cl-dbi:prepare connection "INSERT INTO objectgroup VALUES (?, ?, ?)")
+	 (list group-id name map-id))
+	
+	(dolist (obj (get-alist object-group :objects))
+	  (let* ((id (get-alist obj "id"))
+		 (name (or (get-alist obj "name") ""))
+		 (x (get-alist obj "x" :expected-type :double))
+		 (y (get-alist obj "y" :expected-type :double))
+		 (width (get-alist obj "width" :expected-type :double))
+		 (height (get-alist obj "height" :expected-type :double))
+		 (warp-zone? (get-alist obj :warp-zone? :expected-type :lisp-bool)))
+	    (assert name)
+	    (cl-dbi:execute 
+	     (cl-dbi:prepare connection "INSERT INTO object VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+	     (list id name x y width height group-id warp-zone?))))))))
+		 
 	   
 (defun save-map-to-db! (connection tmx-path)
   (let* ((png-path (generate-png-filename tmx-path))
 	 (tmx-metadata (read-tmx tmx-path))
 	 (map-id (insert-map-get-id connection tmx-path png-path tmx-metadata)))
-
     (insert-layers connection map-id tmx-metadata)
-    
+    (insert-objects-and-groups connection map-id tmx-metadata)    
     (generate-png tmx-path)
     (format t "Made png of ~a in ~a~%" tmx-path png-path)))
 
