@@ -1,2 +1,9 @@
 <h3> Map {{map-id}} </h3>
-<img src="/map/{{map-id}}/img" class="map-img" />
+<div class="map-container">
+  <img src="/map/{{map-id}}/img" />
+  {{#warpzone-objects}}
+  <a href="/connect-map/{{map-id}}/{{id}}" class="warpzone" style="left: {{x}}; top: {{y}};">
+    <button>Connect warpzone to another map </button>
+  </a>
+    {{/warpzone-objects}}
+</div>

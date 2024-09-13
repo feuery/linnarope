@@ -45,9 +45,10 @@
 
 
 		;; current-map css
-		(.map-img
-		 :width "40%"
-		 :height "40%"))))
+		(.map-container
+		 :position "relative")
+		(.warpzone
+		 :position "absolute"))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
@@ -64,7 +65,20 @@
       `((:maps . ,maps))))
 
 (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
-  `((:map-id . ,id)))
+  (let ((warpzone-objects (mapcar
+			   (lambda (row)
+			     `((:name . ,(getf row :|name|))
+			       (:id . ,(getf row :|id|))
+			       (:x . ,(ceiling (getf row :|x|)))
+			       (:y . ,(ceiling (getf row :|y|)))))
+			   (cl-dbi:fetch-all
+			    (cl-dbi:execute
+			     (cl-dbi:prepare
+			      *connection*
+			      "SELECT * FROM object o JOIN objectgroup og ON og.id = o.group_id WHERE og.map_id = ? AND warp_zone = 1")
+			     (list id))))))
+    `((:map-id . ,id)
+      (:warpzone-objects . ,warpzone-objects))))
 
 (defsubtab (new-map "/new-map" "new-map.html" maps) (&get path)
   (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))
@@ -77,6 +91,14 @@
 				  (:tmx? . ,(equalp (pathname-type f) "tmx"))
 				  (:dir . ,(cl-fad:directory-pathname-p f))))
 			      (cl-fad:list-directory path)))))))
+
+(defsubtab (connect-warpzone-map-chooser "/connect-map/:src-map-id/:src-warpzone-id" "connect-warpzone-map-chooser.html" maps) ()
+  nil
+  ;; kaiva kaikki muut kannassa olevat mapit
+  ;; laita käyttäjä valitsemaan mappi
+  ;; näytä current_map.html:n kaltainen käli, jossa on mahdollista valita dst-warpzone
+  ;; ja kun sitä painaa, tallenna linkki kantaan ja palaa src-mappiin)
+  )
 
 (defroute root ("/" :method :get) ()
   (easy-routes:redirect 'maps))
