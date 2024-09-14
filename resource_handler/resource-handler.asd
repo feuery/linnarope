@@ -34,4 +34,5 @@
 		  :components ((:file "root")))
 		 (:file "main")))))
 
-;; (asdf:make "linnarope-resource-handler") 
+;; (asdf:make "linnarope-resource-handler")
+;; (linnarope.main:start-server)

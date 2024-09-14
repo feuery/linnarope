@@ -2,6 +2,7 @@
 (defpackage lisp-fixup
   (:use :cl)
   (:export :partial
+	   :hashtable-merge
 	   :with-output-to-real-string
 	   :compose :drop
 	   :slurp-bytes :slurp-utf-8))
@@ -45,3 +46,10 @@
       (reduce #'funcall functions
               :initial-value x
               :from-end t)))
+
+(defun hashtable-merge (m1 m2)
+  "Destructively assigns everything in m2 into m1 and returns it"
+  (dolist (cell (alexandria:hash-table-alist m2))
+    (destructuring-bind (k . v) cell
+      (setf (gethash k m1) v)))
+  m1)

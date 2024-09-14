@@ -64,19 +64,23 @@
 			   "SELECT * FROM map"))))))
       `((:maps . ,maps))))
 
+(defun get-warpzone-objects (map-id)
+  (assert *connection*)
+  (mapcar
+   (lambda (row)
+     `((:name . ,(getf row :|name|))
+       (:id . ,(getf row :|id|))
+       (:x . ,(ceiling (getf row :|x|)))
+       (:y . ,(ceiling (getf row :|y|)))))
+   (cl-dbi:fetch-all
+    (cl-dbi:execute
+     (cl-dbi:prepare
+      *connection*
+      "SELECT * FROM object o JOIN objectgroup og ON og.id = o.group_id WHERE og.map_id = ? AND warp_zone = 1")
+     (list map-id)))))
+
 (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
-  (let ((warpzone-objects (mapcar
-			   (lambda (row)
-			     `((:name . ,(getf row :|name|))
-			       (:id . ,(getf row :|id|))
-			       (:x . ,(ceiling (getf row :|x|)))
-			       (:y . ,(ceiling (getf row :|y|)))))
-			   (cl-dbi:fetch-all
-			    (cl-dbi:execute
-			     (cl-dbi:prepare
-			      *connection*
-			      "SELECT * FROM object o JOIN objectgroup og ON og.id = o.group_id WHERE og.map_id = ? AND warp_zone = 1")
-			     (list id))))))
+  (let ((warpzone-objects (get-warpzone-objects id)))
     `((:map-id . ,id)
       (:warpzone-objects . ,warpzone-objects))))
 
@@ -92,13 +96,30 @@
 				  (:dir . ,(cl-fad:directory-pathname-p f))))
 			      (cl-fad:list-directory path)))))))
 
+(defun filename (p)
+  (format nil "~a.~a"
+	  (pathname-name p)
+	  (pathname-type p)))
+
 (defsubtab (connect-warpzone-map-chooser "/connect-map/:src-map-id/:src-warpzone-id" "connect-warpzone-map-chooser.html" maps) ()
-  nil
-  ;; kaiva kaikki muut kannassa olevat mapit
-  ;; laita käyttäjä valitsemaan mappi
-  ;; näytä current_map.html:n kaltainen käli, jossa on mahdollista valita dst-warpzone
-  ;; ja kun sitä painaa, tallenna linkki kantaan ja palaa src-mappiin)
-  )
+  (let ((maps (mapcar
+	       (lambda (m)
+		 `((:id . ,(getf m :|ID|))
+		   (:name . ,(filename (getf m :|tmx_path|)))))
+	       (cl-dbi:fetch-all (cl-dbi:execute (cl-dbi:prepare *connection*
+								"SELECT id, tmx_path FROM map WHERE id <> ?")
+						 (list src-map-id))))))
+    `((:maps . ,maps)
+      (:src-map-id . ,src-map-id)
+      (:src-warpzone-id . ,src-warpzone-id))))
+
+(defsubtab (dst-map-chooser "/open-connected-map-for-warpzone/:src-map-id/:src-warpzone-id" "dst-map-chooser.html" maps)
+    (&get dst-map-id)
+  (let ((warpzone-objects (get-warpzone-objects dst-map-id)))
+    `((:src-map-id . ,src-map-id)
+      (:src-warpzone-id . ,src-warpzone-id)
+      (:dst-map-id . ,dst-map-id)
+      (:warpzone-objects . ,warpzone-objects))))
 
 (defroute root ("/" :method :get) ()
   (easy-routes:redirect 'maps))
@@ -113,6 +134,19 @@
 	(setf (hunchentoot:return-code*) 400)
 	"<p>tmx-files is nil</p>")))
 
+(defroute map-spawnpoint-handler ("/select_destination"
+				  ;; really illegal to fumble the db in a :get handler...
+				  :method :get
+				  :decorators (@db))
+    (&get src-map-id src-warpzone-id dst-map-id dst-warpzone-id)
+  (assert src-map-id)
+  (assert src-warpzone-id)
+  (assert dst-map-id)
+  (assert dst-warpzone-id)
+  (linnarope.db.maps:insert-warp-connection *connection* src-map-id src-warpzone-id dst-map-id dst-warpzone-id)
+  (easy-routes:redirect 'maps))
+
+
 (defroute map-img ("/map/:id/img" :method :get :decorators (@db)) ()
   (let* ((q (cl-dbi:prepare *connection* "SELECT png_path FROM map WHERE ID = ?"))
 	 (rs (cl-dbi:fetch-all (cl-dbi:execute q (list id))))
@@ -121,5 +155,3 @@
 	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
     (setf (hunchentoot:content-type*) "image/png")
     bytes))
-    
-	 

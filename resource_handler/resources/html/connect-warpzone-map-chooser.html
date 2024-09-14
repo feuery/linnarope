@@ -1,0 +1,11 @@
+<form action="/open-connected-map-for-warpzone/{{src-map-id}}/{{src-warpzone-id}}" method="GET">
+  <h3>Select the destination map</h3>
+  <select multiple name="dst-map-id">
+    {{#maps}}
+    <option value="{{id}}">{{name}}</option>
+    {{/maps}}
+  </select>
+
+  <input type="submit" />
+
+</form>
