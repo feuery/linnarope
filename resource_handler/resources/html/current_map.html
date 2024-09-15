@@ -5,5 +5,12 @@
   <a href="/connect-map/{{map-id}}/{{id}}" class="warpzone" style="left: {{x}}; top: {{y}};">
     <button>Connect warpzone to another map </button>
   </a>
-    {{/warpzone-objects}}
+  {{/warpzone-objects}}
+
+  {{#populated-warpzones}}
+  <div class="warpzone" style="background-color: #fff; left: {{x}}; top: {{y}};">
+    <a href="/map/{{dst-map-id}}" style="display: block; margin-bottom: 20px;"> Destination map </a>
+    <button>Remove this connection</button>
+  </div>
+  {{/populated-warpzones}}    
 </div>

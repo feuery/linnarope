@@ -64,25 +64,38 @@
 			   "SELECT * FROM map"))))))
       `((:maps . ,maps))))
 
-(defun get-warpzone-objects (map-id)
+(defun get-warpzone-objects (map-id &optional (kind :unpopulated))
   (assert *connection*)
   (mapcar
    (lambda (row)
      `((:name . ,(getf row :|name|))
        (:id . ,(getf row :|id|))
        (:x . ,(ceiling (getf row :|x|)))
-       (:y . ,(ceiling (getf row :|y|)))))
+       (:y . ,(ceiling (getf row :|y|)))
+       (:dst-map-id . ,(getf row :|dst_map|))))
    (cl-dbi:fetch-all
     (cl-dbi:execute
      (cl-dbi:prepare
       *connection*
-      "SELECT * FROM object o JOIN objectgroup og ON og.id = o.group_id WHERE og.map_id = ? AND warp_zone = 1")
+      (format nil "
+SELECT *
+FROM object o
+JOIN objectgroup og ON og.id = o.group_id
+LEFT JOIN warp_connection wc ON wc.src_warpzone = o.internal_id
+WHERE og.map_id = ?
+      AND warp_zone = 1
+      AND ~a EXISTS (SELECT * FROM warp_connection WHERE src_warpzone = o.internal_id)"
+	      (case kind
+		(:unpopulated "NOT")
+		(:populated ""))))
      (list map-id)))))
 
 (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
-  (let ((warpzone-objects (get-warpzone-objects id)))
+  (let ((warpzone-objects (get-warpzone-objects id))
+	(populated-warpzones (get-warpzone-objects id :populated)))
     `((:map-id . ,id)
-      (:warpzone-objects . ,warpzone-objects))))
+      (:warpzone-objects . ,warpzone-objects)
+      (:populated-warpzones . ,populated-warpzones))))
 
 (defsubtab (new-map "/new-map" "new-map.html" maps) (&get path)
   (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))
@@ -115,10 +128,12 @@
 
 (defsubtab (dst-map-chooser "/open-connected-map-for-warpzone/:src-map-id/:src-warpzone-id" "dst-map-chooser.html" maps)
     (&get dst-map-id)
-  (let ((warpzone-objects (get-warpzone-objects dst-map-id)))
+  (assert dst-map-id)
+  (assert (not (equalp dst-map-id "NIL")))
+  (let* ((warpzone-objects (get-warpzone-objects dst-map-id)))
     `((:src-map-id . ,src-map-id)
       (:src-warpzone-id . ,src-warpzone-id)
-      (:dst-map-id . ,dst-map-id)
+      (:selected-dst-map-id . ,dst-map-id)
       (:warpzone-objects . ,warpzone-objects))))
 
 (defroute root ("/" :method :get) ()

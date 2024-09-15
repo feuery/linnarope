@@ -1,9 +1,9 @@
-<h3>Destination map {{dst-map-id}}</h3>
+<h3>Destination map {{selected-dst-map-id}}</h3>
 
 <div class="map-container">
-  <img src="/map/{{dst-map-id}}/img" />
+  <img src="/map/{{selected-dst-map-id}}/img" />
   {{#warpzone-objects}}
-  <a href="/select_destination?src-map-id={{src-map-id}}&src-warpzone-id={{src-warpzone-id}}&dst-map-id={{dst-map-id}}&dst-warpzone-id={{id}}" class="warpzone" style="left: {{x}}; top: {{y}};">
+  <a href="/select_destination?src-map-id={{src-map-id}}&src-warpzone-id={{src-warpzone-id}}&dst-map-id={{selected-dst-map-id}}&dst-warpzone-id={{id}}" class="warpzone" style="left: {{x}}; top: {{y}};">
     <button>Select destination </button>
   </a>
     {{/warpzone-objects}}
