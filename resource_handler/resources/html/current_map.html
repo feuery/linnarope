@@ -1,4 +1,15 @@
 <h3> Map {{map-id}} </h3>
+
+<script>
+
+  // can't be arsed to explore how to do a 303 http://referer with easy-routes
+  async function removeConnection(map_id, source_object_id) {
+      let response = await fetch(`/warp-for/${map_id}/${source_object_id}`, {method: 'DELETE'});
+      if (response.ok) { location.reload(); }
+      else alert(response.status + " " + response.statusText + " " + response.text());			 
+  }
+</script>
+
 <div class="map-container">
   <img src="/map/{{map-id}}/img" />
   {{#warpzone-objects}}
@@ -10,7 +21,9 @@
   {{#populated-warpzones}}
   <div class="warpzone" style="background-color: #fff; left: {{x}}; top: {{y}};">
     <a href="/map/{{dst-map-id}}" style="display: block; margin-bottom: 20px;"> Destination map </a>
-    <button>Remove this connection</button>
+
+    
+    <button onclick="removeConnection({{map-id}}, {{id}})">Remove this connection</button>
   </div>
   {{/populated-warpzones}}    
 </div>

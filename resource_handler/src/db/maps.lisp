@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :linnarope.tmx :read-tmx)
   (:import-from :lisp-fixup :hashtable-merge)
-  (:export :insert-warp-connection :save-map-to-db!))
+  (:export :get-object-internal-id :insert-warp-connection :save-map-to-db!))
 
 (in-package :linnarope.db.maps)
 

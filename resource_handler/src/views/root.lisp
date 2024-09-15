@@ -170,3 +170,10 @@ WHERE og.map_id = ?
 	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
     (setf (hunchentoot:content-type*) "image/png")
     bytes))
+
+(defroute delete-warp ("/warp-for/:map-id/:src-object-id" :method :delete :decorators (@db)) ()
+  (cl-dbi:execute (cl-dbi:prepare *connection*
+				  "DELETE FROM warp_connection WHERE src_map = ? AND src_warpzone = ?")
+		  (list map-id (linnarope.db.maps:get-object-internal-id *connection* src-object-id map-id)))
+  (setf (hunchentoot:return-code*) 204)
+  "")
