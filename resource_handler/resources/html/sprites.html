@@ -2,7 +2,12 @@
 <ul class="map-list">
 
   {{#sprites}}
-  <li> <a href="/sprite/{{id}}"> {{name}} </a> </li>
+  <li>
+    <details>
+      <summary> {{name}} </summary>
+      <img src="/sprite/{{id}}" />
+    </details>
+  </li>
   {{/sprites}}
 
 </ul>

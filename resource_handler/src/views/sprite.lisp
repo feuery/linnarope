@@ -39,3 +39,12 @@
 	(setf (hunchentoot:content-type*) "text/html")
 	(setf (hunchentoot:return-code*) 400)
 	"<p>png-files is nil</p>")))
+
+(defroute sprite-img ("/sprite/:id" :method :get :decorators (@db)) ()
+  (let* ((q (cl-dbi:prepare *connection* "SELECT png_path FROM sprite WHERE internal_id = ?"))
+	 (rs (cl-dbi:fetch-all (cl-dbi:execute q (list id))))
+	 (row (first rs))
+	 (png-file-path (getf row :|png_path|))
+	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
+    (setf (hunchentoot:content-type*) "image/png")
+    bytes))
