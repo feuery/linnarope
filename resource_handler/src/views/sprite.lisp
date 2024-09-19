@@ -48,3 +48,10 @@
 	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
     (setf (hunchentoot:content-type*) "image/png")
     bytes))
+
+(defroute delete-sprite ("/sprite/:id" :method :delete :decorators (@db)) ()
+  (cl-dbi:execute (cl-dbi:prepare *connection*
+				  "DELETE FROM sprite WHERE internal_id = ?")
+		  (list id))
+  (setf (hunchentoot:return-code*) 204)
+  "")

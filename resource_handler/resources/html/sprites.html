@@ -1,3 +1,17 @@
+<script>
+
+  async function deleteSprite(name, id) {
+      if(!confirm(`Do you really want to delete ${name}?`)) return;
+
+      let response = await fetch(`/sprite/${id}`, {method: 'DELETE'});
+
+      if (response.ok) { location.reload(); }
+      else alert(response.status + " " + response.statusText + " " + response.text());
+  }  
+  
+  
+</script>
+
 <h4>Sprites in system </h4>
 <ul class="map-list">
 
@@ -5,7 +19,8 @@
   <li>
     <details>
       <summary> {{name}} </summary>
-      <img src="/sprite/{{id}}" />
+      <img style="display: block" src="/sprite/{{id}}" />
+      <button onclick="deleteSprite('{{name}}', {{id}})" >Delete this sprite</button> 
     </details>
   </li>
   {{/sprites}}
