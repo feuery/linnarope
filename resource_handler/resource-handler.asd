@@ -29,9 +29,11 @@
 		 (:file "migrations")
 		 (:file "tmxreader")
 		 (:module "db"
-		  :components ((:file "maps")))
+		  :components ((:file "maps")
+			       (:file "sprites")))
 		 (:module "views"
-		  :components ((:file "root")))
+		  :components ((:file "root")
+			       (:file "sprite")))
 		 (:file "main")))))
 
 ;; (asdf:make "linnarope-resource-handler")

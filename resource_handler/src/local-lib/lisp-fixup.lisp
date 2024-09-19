@@ -2,6 +2,7 @@
 (defpackage lisp-fixup
   (:use :cl)
   (:export :partial
+	   :filename
 	   :hashtable-merge
 	   :with-output-to-real-string
 	   :compose :drop
@@ -53,3 +54,8 @@
     (destructuring-bind (k . v) cell
       (setf (gethash k m1) v)))
   m1)
+
+(defun filename (p)
+  (format nil "~a.~a"
+	  (pathname-name p)
+	  (pathname-type p)))

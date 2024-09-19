@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :linnarope.middleware :@db :*connection* :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
-  (:import-from :lisp-fixup :with-output-to-real-string))
+  (:import-from :lisp-fixup :filename :with-output-to-real-string))
 
 (in-package :linnarope.views.root)
 
@@ -108,11 +108,6 @@ WHERE og.map_id = ?
 				  (:tmx? . ,(equalp (pathname-type f) "tmx"))
 				  (:dir . ,(cl-fad:directory-pathname-p f))))
 			      (cl-fad:list-directory path)))))))
-
-(defun filename (p)
-  (format nil "~a.~a"
-	  (pathname-name p)
-	  (pathname-type p)))
 
 (defsubtab (connect-warpzone-map-chooser "/connect-map/:src-map-id/:src-warpzone-id" "connect-warpzone-map-chooser.html" maps) ()
   (let ((maps (mapcar

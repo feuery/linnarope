@@ -1,0 +1,30 @@
+<div>
+  <h3>{{path}}</h3>
+  <p class="help"> Click either on a directory to move there or a png file to add it to the resource database</p>
+  <ul class="file-browser">
+    {{#files}}
+    <li>
+      {{#dir}}
+      <a href="/import-sprite?path={{file-path}}" class="{{#up}}up-arrow {{/up}} dir">
+	{{#up}}
+	&DoubleUpArrow; UP
+	{{/up}}
+
+	{{^up}}
+	  {{file-path}}
+	{{/up}}
+      </a>
+      {{/dir}}
+
+      {{^dir}}
+        {{#png?}}
+          <p class="file tmx"> <a href="/choose-sprite?png-file={{file-path}}"> {{file-path}} </a> </p>
+	{{/png?}}
+	{{^png?}}
+          <p class="file"> {{file-path }} </p>
+	{{/png?}}
+      {{/dir}}
+    </li>
+    {{/files}}
+  </ul>
+</div>

@@ -60,4 +60,11 @@ CREATE TABLE IF NOT EXISTS warp_connection
   src_warpzone INT NOT NULL UNIQUE REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE,
   dst_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
   dst_warpzone INT NOT NULL REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE)")
+
+	 (exec "
+CREATE TABLE IF NOT EXISTS sprite
+(  internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+   png_path TEXT NOT NULL
+   -- no references anywhere as these are expected to just be magic handles one can reference in the c++ code, and are thus not bound to a single map
+);")
 	 (format t "Migrated!~%"))))
