@@ -64,31 +64,41 @@
 			   "SELECT * FROM map"))))))
       `((:maps . ,maps))))
 
+(defun transform-obj (row)
+  `((:name . ,(getf row :|name|))
+    (:id . ,(getf row :|id|))
+    (:x . ,(ceiling (getf row :|x|)))
+    (:y . ,(ceiling (getf row :|y|)))
+    (:dst-map-id . ,(getf row :|dst_map|))))
+
 (defun get-warpzone-objects (map-id &optional (kind :unpopulated))
   (assert *connection*)
-  (mapcar
-   (lambda (row)
-     `((:name . ,(getf row :|name|))
-       (:id . ,(getf row :|id|))
-       (:x . ,(ceiling (getf row :|x|)))
-       (:y . ,(ceiling (getf row :|y|)))
-       (:dst-map-id . ,(getf row :|dst_map|))))
-   (cl-dbi:fetch-all
-    (cl-dbi:execute
-     (cl-dbi:prepare
-      *connection*
-      (format nil "
-SELECT *
+  (let* ((q (case kind
+	      (:unpopulated "SELECT o.id, o.name, o.x, o.y
 FROM object o
 JOIN objectgroup og ON og.id = o.group_id
-LEFT JOIN warp_connection wc ON wc.src_warpzone = o.internal_id
 WHERE og.map_id = ?
       AND warp_zone = 1
-      AND ~a EXISTS (SELECT * FROM warp_connection WHERE src_warpzone = o.internal_id)"
-	      (case kind
-		(:unpopulated "NOT")
-		(:populated ""))))
-     (list map-id)))))
+      AND NOT EXISTS (SELECT * FROM warp_connection WHERE src_map = og.map_id and src_warpzone = o.internal_id)")
+	      
+	      (:populated "SELECT o.id, o.name, o.x, o.y, wc.dst_map
+FROM object o
+JOIN objectgroup og ON og.id = o.group_id
+JOIN warp_connection wc ON wc.src_warpzone = o.internal_id AND wc.src_map = og.map_id
+WHERE og.map_id = ?
+      AND warp_zone = 1")))
+
+	 (results
+	   (cl-dbi:fetch-all
+	    (cl-dbi:execute
+	     (cl-dbi:prepare
+	      *connection*
+	      q)
+	     (list map-id)))))
+    
+    (mapcar
+     #'transform-obj
+     results)))
 
 (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
   (let ((warpzone-objects (get-warpzone-objects id))
