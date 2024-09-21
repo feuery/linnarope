@@ -11,6 +11,7 @@
 struct cli_result {
   std::string map_path;
   std::string png_path;
+  std::string sqlite_path;
 
   // returns true if there's anything to process and the app should thus close after returning here
   bool process();
@@ -43,6 +44,8 @@ SDL_Renderer* createRenderer(SDL_Window *window) {
 }
 
 bool cli_result::process() {
+  assert(map_path == "" || sqlite_path == "");
+  
   if(map_path != "" && png_path != "") {
 
     SDL_Window *w = createWindow(true);
@@ -58,8 +61,8 @@ bool cli_result::process() {
     // tallennetaan karttaa png:ksi
     return true;
   }
-  else if (map_path != "" && png_path == "") {
-    // tulostetaan kartan metadata lispillä luettavassa muodossa
+  else if (sqlite_path != "" && png_path != "") {
+    puts("cli_result::processing() \n");
     return true;
   }
 
@@ -71,13 +74,15 @@ cli_result handle_cli(int argc, char **argv) {
   static option opts[] = {
     {"map-file", required_argument, nullptr, 'm'},
     {"png-output-file", required_argument, nullptr, 'p'},
+    {"whole-map", required_argument, nullptr, 'w'},
     { nullptr, 0, nullptr, 0}};
 
   std::string map = "",
-    png = "";
+    png = "",
+    sqlite_path = "";
   
 
-  while ((c = getopt_long(argc, argv, "m:p:", opts, nullptr)) != -1) {
+  while ((c = getopt_long(argc, argv, "m:p:w:", opts, nullptr)) != -1) {
     switch(c) {
     case 'm':
       printf("map-file found %s\n", optarg);
@@ -87,10 +92,16 @@ cli_result handle_cli(int argc, char **argv) {
       printf("png-output-file discovered: %s\n", optarg);
       png = std::string(optarg);
       break;
+    case 'w':
+      printf("Reading maps from an sqlite db %s\n", optarg);
+      sqlite_path = std::string(optarg);
+      break;
     }
   }
 
-  return { map, png};
+  printf("Read the sqlite path %s\n", sqlite_path.c_str());
+
+  return { map, png, sqlite_path};
 }
 
 int main (int argc, char **argv) {
