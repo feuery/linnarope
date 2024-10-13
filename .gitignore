@@ -18,3 +18,5 @@ maps/*.tiled-session
 *.dylib
 /finropedemo
 *.tmx.*.png
+/taysi_maailma.png
+/whole-map.resource-handler.png

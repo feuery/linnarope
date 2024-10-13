@@ -33,7 +33,8 @@
 			       (:file "sprites")))
 		 (:module "views"
 		  :components ((:file "root")
-			       (:file "sprite")))
+			       (:file "sprite")
+			       (:file "complete-map")))
 		 (:file "main")))))
 
 ;; (asdf:make "linnarope-resource-handler")

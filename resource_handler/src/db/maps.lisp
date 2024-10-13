@@ -1,8 +1,9 @@
 (defpackage linnarope.db.maps
   (:use :cl)
   (:import-from :linnarope.tmx :read-tmx)
+  (:import-from :linnarope.middleware :*database-name*)
   (:import-from :lisp-fixup :hashtable-merge)
-  (:export :get-object-internal-id :insert-warp-connection :save-map-to-db!))
+  (:export :*whole-map-png-location* :generate-whole-map-png :get-object-internal-id :insert-warp-connection :save-map-to-db!))
 
 (in-package :linnarope.db.maps)
 
@@ -21,6 +22,16 @@
 (defun generate-png (tmx-path)
   (sb-ext:run-program *engine-binary-location*
 		      (list "--map-file" tmx-path "--png-output-file" (generate-png-filename tmx-path))))
+
+(defvar *whole-map-png-location* (format nil "~awhole-map.resource-handler.png"
+					 (uiop:pathname-parent-directory-pathname
+					  (asdf:system-source-directory "linnarope-resource-handler"))))
+
+(defun generate-whole-map-png ()
+  "Generates the whole-map.png using engine and returns when it's done"
+  (sb-ext:run-program *engine-binary-location*
+		      (list "--png-output-file" *whole-map-png-location*
+			    "--whole-map" *database-name*)))
 
 (defun get-alist (alist key &key (expected-type :string))
   (let ((v (assoc key alist :test 'equalp)))

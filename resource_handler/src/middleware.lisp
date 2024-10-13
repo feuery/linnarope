@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :lisp-fixup :with-output-to-real-string)
   (:import-from :easy-routes :defroute)
-  (:export :defsubtab :deftab :tabs :@html :@db :*connection*))
+  (:export :defsubtab :deftab :tabs :@html :@db :*connection* :*database-name*))
 
 (in-package :linnarope.middleware)
 
@@ -70,8 +70,10 @@
 (defvar *connection*
   nil)
 
+(defvar *database-name* (format nil "~aresources.db" *system-source-directory*))
+
 (defun @db (next)
-  (dbi:with-connection (conn :sqlite3 :database-name (format nil "~aresources.db" *system-source-directory*))
+  (dbi:with-connection (conn :sqlite3 :database-name *database-name*)
     (let ((*connection* conn))
       ;; why is this not committing?
       ;; (dbi:with-transaction *connection*
