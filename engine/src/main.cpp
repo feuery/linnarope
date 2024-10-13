@@ -1,20 +1,25 @@
 #include <cassert>
 #include <cstdio>
 #include <SDL.h>
+#include "SDL_surface.h"
 #include "SDL_video.h"
 #include "finrope.h"
 #include <string>
 #include "tmxreader.h"
 #include <getopt.h>
 #include <SDL_image.h>
+#include <sqlite3.h>
 
 struct cli_result {
   std::string map_path;
   std::string png_path;
   std::string sqlite_path;
 
+  std::string initial_tmx_path = "";
+
   // returns true if there's anything to process and the app should thus close after returning here
   bool process();
+  void get_initial_tmx_path(const char *sqlite_path);
 };
 
 SDL_Window* createWindow(bool hidden = false) {
@@ -43,6 +48,26 @@ SDL_Renderer* createRenderer(SDL_Window *window) {
   return renderer;
 }
 
+// returning std::string seems to be fucking impossible in c++ (due to
+// std::string missing a copy constructor?) so this returns its value in a really
+// dumb way through the lexical this-> scope
+void cli_result::get_initial_tmx_path(const char *sqlite_path) {
+  sqlite3 *db;
+  sqlite3_stmt *stmt;
+  sqlite3_open(sqlite_path, &db);
+
+  sqlite3_prepare(db, "SELECT tmx_path FROM Map WHERE ID IN (SELECT src_map FROM warp_connection) LIMIT 1", -1, &stmt, nullptr);
+
+  if(sqlite3_step(stmt) == SQLITE_ROW) {
+    auto txt = sqlite3_column_text(stmt, 0);
+    assert(txt);
+    this->initial_tmx_path = std::string (reinterpret_cast<const char*>(txt));
+  }
+  else puts("Didn't find a suitable map");
+  
+  sqlite3_close(db);
+}
+
 bool cli_result::process() {
   assert(map_path == "" || sqlite_path == "");
   
@@ -62,7 +87,29 @@ bool cli_result::process() {
     return true;
   }
   else if (sqlite_path != "" && png_path != "") {
+    get_initial_tmx_path(sqlite_path.c_str());
+
+    assert(initial_tmx_path != "");
+    
     puts("cli_result::processing() \n");
+    printf("Making a huge map of %s and %s\n", sqlite_path.c_str(), initial_tmx_path.c_str());
+
+    SDL_Window *w = createWindow(true);
+    SDL_Renderer *r = createRenderer(w);
+
+    Map *first = read_map(initial_tmx_path.c_str(), sqlite_path.c_str());
+    
+    drawing_state *ctx = start_drawing();
+
+    generate_drawing_context(first, ctx, r);
+
+    SDL_Surface *final_map = stop_drawing(ctx);
+
+    IMG_SavePNG(final_map, png_path.c_str());
+
+    printf("Saved the whole map (%d x %d) to %s\n", final_map->w, final_map->h, png_path.c_str());
+    SDL_FreeSurface(final_map);
+    
     return true;
   }
 
@@ -117,9 +164,9 @@ int main (int argc, char **argv) {
   assert(window);
 
   auto *renderer = createRenderer(window);
-  assert(renderer);
-
-  Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-töölön tulli.tmx");
+  assert(renderer); 
+  Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-toolon tulli.tmx",
+		      "/Users/feuer/Projects/finrope/resource_handler/resources.db");
   puts("Read the whole stadi!");
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);

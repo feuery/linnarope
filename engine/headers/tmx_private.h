@@ -63,6 +63,7 @@ class Object {
   const char *name;
   double x, y, width, height;
 
+  virtual Map* warpzone_dst_map();
   virtual void render(SDL_Surface *dst, Map *m) = 0;
 
   Object(Object &o);
@@ -71,6 +72,12 @@ class Object {
 
 class EllipseObject: public Object {
  public:
+
+  // warpzone specific coordinates
+  int dst_x, dst_y;
+  Map *dst_map;
+  Map* warpzone_dst_map() override;
+  
   void render(SDL_Surface *dst, Map *m) override;
   EllipseObject() {}
 };
@@ -103,12 +110,15 @@ class Map {
  public:    
   double version;
   const char *tiledversion, *orientation, *renderorder;
-  int width, height, tilewidth, tileheight;
+  int width, height, tilewidth, tileheight, databaseID;
   bool infinite;
   int nextlayerId, nextobjectid;
   std::vector<Tileset*> tilesets;
   std::vector<Layer> layers;
   std::vector<ObjectGroup> objs;
+  
+  // These should be cleaned up by ~ObjectGroup, if such a function existed
+  std::vector<EllipseObject*> warpzones;
 
   SDL_Surface *rendered_map;
   SDL_Texture *rendered_map_tex;
