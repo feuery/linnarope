@@ -1,8 +1,9 @@
 (defpackage linnarope.views.root
   (:use :cl)
-  (:import-from :linnarope.middleware :@db :*connection* :@html :@css :deftab :defsubtab)
+  (:import-from :linnarope.middleware :list-all-js-resources :@db :*connection* :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
-  (:import-from :lisp-fixup :filename :with-output-to-real-string))
+  (:import-from :lisp-fixup :filename :with-output-to-real-string)
+  (:local-nicknames (:palette-db :linnarope.db.palettes)))
 
 (in-package :linnarope.views.root)
 
@@ -48,7 +49,12 @@
 		(.map-container
 		 :position "relative")
 		(.warpzone
-		 :position "absolute"))))
+		 :position "absolute")
+		("input[type='color']"
+		 :display "block")
+		("#new_color"
+		 :display "block"
+		 :margin-bottom "20px"))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
@@ -63,6 +69,34 @@
 			   *connection*
 			   "SELECT * FROM map"))))))
       `((:maps . ,maps))))
+
+(deftab (palettes "/palettes" "palettes.html")
+    (let ((palettes (mapcar (lambda (palette)
+			      `((:id . ,(getf palette :id))
+				(:name . ,(getf palette :|name|))))
+			    (cl-dbi:fetch-all
+			     (cl-dbi:execute
+			      (cl-dbi:prepare
+				  *connection*
+				  "SELECT * FROM palette"))))))
+      (format t "palettes ~a~%" palettes)
+      `((:palettes .
+		   ,palettes))))
+
+;; (route-symbol route-url component-filename parent-tab)
+(defsubtab (new-palette "/new-palette" "new-palette.html" palettes :post) () (&post name)
+  (assert name)
+  `((:name . ,name)
+    (:js-files . ((:src . "palette-editor.js")))))
+
+;; (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
+(defsubtab (edit-palette "/palette/:id" "palette-id.html" palettes) () ()
+  (let ((palette (palette-db:get-palette *connection* id)))
+    (cl-hash-util:with-keys ("colors" "name") palette
+      `((:name . ,name)
+	(:palette-id . ,id)
+	(:colors . ,(mapcar #'alexandria:hash-table-alist colors))
+	(:js-files . ((:src . "palette-editor.js")))))))
 
 (defun transform-obj (row)
   `((:name . ,(getf row :|name|))
@@ -100,14 +134,14 @@ WHERE og.map_id = ?
      #'transform-obj
      results)))
 
-(defsubtab (current-map "/map/:id" "current_map.html" maps) ()
+(defsubtab (current-map "/map/:id" "current_map.html" maps) () ()
   (let ((warpzone-objects (get-warpzone-objects id))
 	(populated-warpzones (get-warpzone-objects id :populated)))
     `((:map-id . ,id)
       (:warpzone-objects . ,warpzone-objects)
       (:populated-warpzones . ,populated-warpzones))))
 
-(defsubtab (new-map "/new-map" "new-map.html" maps) (&get path)
+(defsubtab (new-map "/new-map" "new-map.html" maps) () (&get path)
   (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))
     `((:path . ,path)
       (:files . ,(cons `((:file-path . ,(uiop:pathname-parent-directory-pathname path))
@@ -119,7 +153,7 @@ WHERE og.map_id = ?
 				  (:dir . ,(cl-fad:directory-pathname-p f))))
 			      (cl-fad:list-directory path)))))))
 
-(defsubtab (connect-warpzone-map-chooser "/connect-map/:src-map-id/:src-warpzone-id" "connect-warpzone-map-chooser.html" maps) ()
+(defsubtab (connect-warpzone-map-chooser "/connect-map/:src-map-id/:src-warpzone-id" "connect-warpzone-map-chooser.html" maps) () ()
   (let ((maps (mapcar
 	       (lambda (m)
 		 `((:id . ,(getf m :|ID|))
@@ -131,7 +165,7 @@ WHERE og.map_id = ?
       (:src-map-id . ,src-map-id)
       (:src-warpzone-id . ,src-warpzone-id))))
 
-(defsubtab (dst-map-chooser "/open-connected-map-for-warpzone/:src-map-id/:src-warpzone-id" "dst-map-chooser.html" maps)
+(defsubtab (dst-map-chooser "/open-connected-map-for-warpzone/:src-map-id/:src-warpzone-id" "dst-map-chooser.html" maps) ()
     (&get dst-map-id)
   (assert dst-map-id)
   (assert (not (equalp dst-map-id "NIL")))
@@ -166,6 +200,58 @@ WHERE og.map_id = ?
   (linnarope.db.maps:insert-warp-connection *connection* src-map-id src-warpzone-id dst-map-id dst-warpzone-id)
   (easy-routes:redirect 'maps))
 
+(defun read-arrayed-form ()
+  "Tries to read multipart-less POSTed form into a hashtable that contains form-value[]s correctly as lists under the key \"form-value\""
+  (let ((post-data (hunchentoot:raw-post-data :force-text t)))
+    (reduce (lambda (acc new-param)
+	      (destructuring-bind (name value) (str:split "=" new-param)
+		(let ((cleaned-name (str:replace-all "[]" "" name))
+		      (array? (str:ends-with-p "[]" name)))
+		  (multiple-value-bind (prev-value found) (gethash cleaned-name acc)
+		    (if found
+			(setf (gethash cleaned-name acc) (cons value prev-value))
+			(setf (gethash cleaned-name acc) (if array?
+							     (list value)
+							     value)))
+		    acc))))
+	    (binding-arrows:->>
+	      post-data
+	      (quri:url-decode )
+	      (str:split "&"))
+	    :initial-value (make-hash-table :test 'equal))))
+
+(defroute palette-saver ("/save-palette" :method :post :decorators (@db)) ()
+  (cl-hash-util:with-keys ("name" "color") (read-arrayed-form)
+    (let ((palette-id (linnarope.db.palettes:insert-palette *connection* name)))
+      (dolist (hex color)
+	(linnarope.db.palettes:insert-rgb *connection* palette-id hex))))
+  
+  (easy-routes:redirect 'palettes))
+
+(defroute palette-editor ("/update-palette" :method :post :decorators (@db)) ()
+  (let* ((form (read-arrayed-form))
+	 (color-keys (binding-arrows:->>
+		       (alexandria:hash-table-keys form)
+		       (remove-if-not (lisp-fixup:partial #'str:starts-with-p "color-")))))
+    
+    (cl-hash-util:with-keys ("palette_id" "color") form
+      (assert palette_id)
+
+      ;; new colors 
+      (dolist (hex (reverse color))
+	(format t "Saving ~a~%" hex)
+	(linnarope.db.palettes:insert-rgb *connection* palette_id hex))
+
+      (dolist (k color-keys)
+	(let ((hex (gethash k form)))
+	  (format t "Updating ~a to ~a ~%" k hex)
+	  (linnarope.db.palettes:update-rgb *connection* (str:replace-all "color-" "" k) hex)))
+
+      ;; TODO should probably remove orphaned colors too?
+      
+      (easy-routes:redirect 'palettes))))
+    
+
 
 (defroute map-img ("/map/:id/img" :method :get :decorators (@db)) ()
   (let* ((q (cl-dbi:prepare *connection* "SELECT png_path FROM map WHERE ID = ?"))
@@ -182,3 +268,34 @@ WHERE og.map_id = ?
 		  (list map-id (linnarope.db.maps:get-object-internal-id *connection* src-object-id map-id)))
   (setf (hunchentoot:return-code*) 204)
   "")
+
+(defun find-js (filename)
+  (format t "Slurping ~a~%" filename)
+  
+  (let ((body (linnarope.middleware:js-resource filename)))
+    (if body
+	(progn
+	  (setf (hunchentoot:content-type*) "text/javascript")
+	  body)
+	(progn
+	  (setf (hunchentoot:return-code*) 404)
+	  ""))))
+
+(defmacro js-routes ()
+  "Iterates all the *.js files in /resource_handler/resources/js/ and creates a defroute delegating the actual finding into find-js function.
+
+This macro is necessary due to \"/:filename.js\" being impossible to represent in the route matching syntax"
+  (let ((resources (binding-arrows:->>
+		     (list-all-js-resources)
+		     (remove-if-not (lisp-fixup:compose
+				     (lisp-fixup:partial #'equalp "js")
+				     #'pathname-type)))))
+    `(progn
+       ,@(mapcar (lambda (resource)
+		   (let* ((fname (pathname-name resource))
+			  (symbol (intern (format nil "~a-route" fname))))
+		     `(defroute ,symbol (,(format nil "/~a.js" fname)) () 
+			(find-js ,(format nil "~a.js" fname)))))
+		 resources))))
+
+(js-routes)

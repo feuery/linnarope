@@ -1,0 +1,14 @@
+<form action="/update-palette" method="post">
+  <h1>Palette {{name}}</h1>
+
+  <h2>Colors:</h2>
+  <label id="colors"> Colors:
+    {{#colors}}
+    <input type="color" name="color-{{id}}" value="{{color}}" />
+    {{/colors}}
+  </label>
+
+  <button id="new_color">New color</button>
+  <input type="hidden" name="palette_id" value="{{palette-id}}" />
+  <input type="submit" value="Save palette"  />
+</div>

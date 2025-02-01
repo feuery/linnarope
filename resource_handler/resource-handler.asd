@@ -19,7 +19,9 @@
 	       "xmls"
 	       "cl-css"
 	       "cl-mustache"
-	       "parse-number")
+	       "parse-number"
+	       "quri"
+	       "cl-hash-util")
   :description "A resource handler for linnarope game"
   :components ((:module "src"
 		:components
@@ -30,7 +32,8 @@
 		 (:file "tmxreader")
 		 (:module "db"
 		  :components ((:file "maps")
-			       (:file "sprites")))
+			       (:file "sprites")
+			       (:file "palettes")))
 		 (:module "views"
 		  :components ((:file "root")
 			       (:file "sprite")

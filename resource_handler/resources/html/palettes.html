@@ -1,0 +1,17 @@
+<div>
+  <h1>Palettes</h1>
+  <ul class="map-list">
+    {{#palettes}}
+      <li> <a href="/palette/{{id}}"> {{name}} </a> </li>
+    {{/palettes}}
+  </ul>
+
+  <h2>New palette </h2>
+  <form action="/new-palette" method="POST">
+    <label> Palette's name: 
+      <input id="name" name="name" type="text" />
+    </label>
+    <input type="submit" value="Add a new palette" />
+  </form>
+</div>
+  

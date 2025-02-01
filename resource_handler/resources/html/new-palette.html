@@ -1,0 +1,14 @@
+<form action="/save-palette" method="post">
+  
+  <label>Name: 
+    <input name="name" id="name" type="text" value="{{name}}" />
+  </label>
+
+  <label id="colors"> Colors:
+    <input name="color[]" id="color1" type="color"  />
+
+  </label>
+
+  <button id="new_color">New color</button>
+  <input type="submit" value="Save palette"  />
+</form>

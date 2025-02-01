@@ -2,6 +2,7 @@
 (defpackage lisp-fixup
   (:use :cl)
   (:export :partial
+	   :range
 	   :filename
 	   :hashtable-merge
 	   :with-output-to-real-string
@@ -59,3 +60,10 @@
   (format nil "~a.~a"
 	  (pathname-name p)
 	  (pathname-type p)))
+
+(defun range (n)
+  (labels ((irange (i acc)
+	     (if (< i n)
+		 (irange (1+ i) (cons i acc))
+		 acc)))
+    (reverse (irange 0 nil))))

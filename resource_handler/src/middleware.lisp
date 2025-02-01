@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :lisp-fixup :with-output-to-real-string)
   (:import-from :easy-routes :defroute)
-  (:export :defsubtab :deftab :tabs :@html :@db :*connection* :*database-name*))
+  (:export :list-all-js-resources :js-resource :defsubtab :deftab :tabs :@html :@db :*connection* :*database-name*))
 
 (in-package :linnarope.middleware)
 
@@ -10,10 +10,19 @@
   (cdr (assoc key alist)))
 
 (defvar *resource-path* (pathname (format nil "~aresources/html/" (asdf:system-source-directory "linnarope-resource-handler"))))
+(defvar *js-resource-path* (pathname (format nil "~aresources/js/" (asdf:system-source-directory "linnarope-resource-handler"))))
 
 (defun html-resource (filename)
   (lisp-fixup:slurp-utf-8 
    (pathname (format nil "~a/~a" *resource-path* filename))))
+
+(defun js-resource (filename)
+  (lisp-fixup:slurp-utf-8 
+   (pathname (format nil "~a/~a" *js-resource-path* filename))))
+
+(defun list-all-js-resources ()
+  (cl-fad:list-directory 
+   *js-resource-path*))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar tabs (make-hash-table :test 'equal)
@@ -50,10 +59,16 @@
 	     (progn
 	       ,@contents)))))
 
-(defmacro defsubtab (varlist http-varlist &rest contents)
-  (destructuring-bind (route-symbol route-url component-filename parent-tab) varlist
-    (let ((tab-url (gethash parent-tab tabs)))
-      `(defroute ,route-symbol (,route-url :method :get :decorators ((@html ,tab-url) @db)) ,http-varlist
+(defmacro defsubtab (varlist decorators http-varlist &rest contents)
+  (destructuring-bind (route-symbol route-url component-filename parent-tab . _) varlist
+    ;; shut up plz :D
+    (declare (ignore _))
+    (let* ((tab-url (gethash parent-tab tabs))
+	   (last-var (car (last varlist)))
+	   (method (if (not (equalp last-var parent-tab))
+		       last-var
+		       :get)))
+      `(defroute ,route-symbol (,route-url :method ,method :decorators ((@html ,tab-url) @db ,@decorators)) ,http-varlist
 	 (cons (cons :component ,component-filename)
 	       (progn
 		 ,@contents))))))

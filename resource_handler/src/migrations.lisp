@@ -67,4 +67,16 @@ CREATE TABLE IF NOT EXISTS sprite
    png_path TEXT NOT NULL
    -- no references anywhere as these are expected to just be magic handles one can reference in the c++ code, and are thus not bound to a single map
 );")
+	 (exec
+	  "CREATE TABLE IF NOT EXISTS palette
+(  ID INTEGER PRIMARY KEY AUTOINCREMENT,
+   name TEXT UNIQUE NOT NULL)")
+	 (exec
+	  "CREATE TABLE IF NOT EXISTS palette_color 
+(  ID INTEGER PRIMARY KEY AUTOINCREMENT,
+   palette_id INTEGER NOT NULL REFERENCES palette(ID) ON UPDATE CASCADE ON DELETE CASCADE,
+   r INT NOT NULL CHECK (r >= 0 AND r <= 255),
+   g INT NOT NULL CHECK (g >= 0 AND g <= 255),
+   b INT NOT NULL CHECK (b >= 0 AND b <= 255))")
+   
 	 (format t "Migrated!~%"))))
