@@ -18,7 +18,7 @@
 			      *connection*
 			      "SELECT * FROM sprite")))))))
 
-(defsubtab (import-sprite "/import-sprite" "import-sprite.html" sprites) (&get path)
+(defsubtab (import-sprite "/import-sprite" "import-sprite.html" sprites) () (&get path)
   (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))
     `((:path . ,path)
       (:files . ,(cons `((:file-path . ,(uiop:pathname-parent-directory-pathname path))

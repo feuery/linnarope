@@ -70,13 +70,25 @@ CREATE TABLE IF NOT EXISTS sprite
 	 (exec
 	  "CREATE TABLE IF NOT EXISTS palette
 (  ID INTEGER PRIMARY KEY AUTOINCREMENT,
-   name TEXT UNIQUE NOT NULL)")
+   name TEXT UNIQUE NOT NULL,
+   color_array JSONB NOT NULL)")
+
+	 ;; meidän täytyy tehdä palette_id:stä "base-pointteri" ja tän taulun ID:stä 0-indeksoitu, palette_id:n sisällä juokseva id, jolloin lopullinen väri spritessä on aina rivi paletin_id+värin_id, mikä mahdollistaa sen paletin vaihtamisen 
+	 
+
 	 (exec
-	  "CREATE TABLE IF NOT EXISTS palette_color 
-(  ID INTEGER PRIMARY KEY AUTOINCREMENT,
-   palette_id INTEGER NOT NULL REFERENCES palette(ID) ON UPDATE CASCADE ON DELETE CASCADE,
-   r INT NOT NULL CHECK (r >= 0 AND r <= 255),
-   g INT NOT NULL CHECK (g >= 0 AND g <= 255),
-   b INT NOT NULL CHECK (b >= 0 AND b <= 255))")
-   
+	  "CREATE TABLE IF NOT EXISTS lisp_sprite
+( ID INTEGER PRIMARY KEY AUTOINCREMENT,
+  x INTEGER NOT NULL,
+  y INTEGER NOT NULL,
+  palette_id INT NOT NULL REFERENCES palette(ID)
+  ON UPDATE CASCADE
+  -- deleting palettes should prompt the user update palettes and not `rm -rf` this table
+  ON DELETE RESTRICT,
+  -- we'll see if this table should be made into view that pulls the hex-color straight from the palette table
+  color_index INT NOT NULL DEFAULT 0)")
+
+	 ;; (cl-dbi:execute (cl-dbi:prepare *connection*
+	 ;; 		     "INSERT INTO palette (name, color_array) VALUES (?,?)")
+	 ;; 		 (list "Paletti" (com.inuoe.jzon:stringify #("FF00AA" "C0FFEE" "123456"))))
 	 (format t "Migrated!~%"))))

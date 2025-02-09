@@ -83,11 +83,24 @@
       `((:palettes .
 		   ,palettes))))
 
+;; (deftab (sprites "/sprites" "sprites.html")
+;;     (let ((sprites (mapcar (lambda (palette)
+;; 			      `((:id . ,(getf palette :id))
+;; 				(:name . ,(getf palette :|name|))))
+;; 			    (cl-dbi:fetch-all
+;; 			     (cl-dbi:execute
+;; 			      (cl-dbi:prepare
+;; 				  *connection*
+;; 				  "SELECT * FROM palette"))))
+
 ;; (route-symbol route-url component-filename parent-tab)
 (defsubtab (new-palette "/new-palette" "new-palette.html" palettes :post) () (&post name)
   (assert name)
   `((:name . ,name)
     (:js-files . ((:src . "palette-editor.js")))))
+
+(defun hex->color (hex)
+  `((:color . ,hex)))
 
 ;; (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
 (defsubtab (edit-palette "/palette/:id" "palette-id.html" palettes) () ()
@@ -95,7 +108,7 @@
     (cl-hash-util:with-keys ("colors" "name") palette
       `((:name . ,name)
 	(:palette-id . ,id)
-	(:colors . ,(mapcar #'alexandria:hash-table-alist colors))
+	(:colors . ,(mapcar #'hex->color (coerce colors 'list)))
 	(:js-files . ((:src . "palette-editor.js")))))))
 
 (defun transform-obj (row)
@@ -209,7 +222,8 @@ WHERE og.map_id = ?
 		      (array? (str:ends-with-p "[]" name)))
 		  (multiple-value-bind (prev-value found) (gethash cleaned-name acc)
 		    (if found
-			(setf (gethash cleaned-name acc) (cons value prev-value))
+			(setf (gethash cleaned-name acc)
+			      (concatenate 'list prev-value (list value)))
 			(setf (gethash cleaned-name acc) (if array?
 							     (list value)
 							     value)))
@@ -222,33 +236,15 @@ WHERE og.map_id = ?
 
 (defroute palette-saver ("/save-palette" :method :post :decorators (@db)) ()
   (cl-hash-util:with-keys ("name" "color") (read-arrayed-form)
-    (let ((palette-id (linnarope.db.palettes:insert-palette *connection* name)))
-      (dolist (hex color)
-	(linnarope.db.palettes:insert-rgb *connection* palette-id hex))))
-  
+    (linnarope.db.palettes:insert-palette *connection* name (coerce color 'vector)))  
   (easy-routes:redirect 'palettes))
 
 (defroute palette-editor ("/update-palette" :method :post :decorators (@db)) ()
-  (let* ((form (read-arrayed-form))
-	 (color-keys (binding-arrows:->>
-		       (alexandria:hash-table-keys form)
-		       (remove-if-not (lisp-fixup:partial #'str:starts-with-p "color-")))))
-    
+  (let* ((form (read-arrayed-form)))
     (cl-hash-util:with-keys ("palette_id" "color") form
       (assert palette_id)
-
-      ;; new colors 
-      (dolist (hex (reverse color))
-	(format t "Saving ~a~%" hex)
-	(linnarope.db.palettes:insert-rgb *connection* palette_id hex))
-
-      (dolist (k color-keys)
-	(let ((hex (gethash k form)))
-	  (format t "Updating ~a to ~a ~%" k hex)
-	  (linnarope.db.palettes:update-rgb *connection* (str:replace-all "color-" "" k) hex)))
-
-      ;; TODO should probably remove orphaned colors too?
-      
+      (format t "color: ~a~%" color)
+      (palette-db:update-palette-colors *connection* palette_id color)
       (easy-routes:redirect 'palettes))))
     
 

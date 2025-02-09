@@ -1,17 +1,21 @@
 (defpackage linnarope.db.palettes
   (:use :cl)
   (:import-from :cl-hash-util :hash)
-  (:export :get-palette :update-rgb :insert-rgb :insert-palette))
+  (:local-nicknames (:json :com.inuoe.jzon))
+  (:export :update-palette-colors :get-palette :insert-palette))
 
 (in-package :linnarope.db.palettes)
 
-(defun insert-palette (connection name)
-  "Returns the new palette's id"
+(defun insert-palette (connection name color-array)
+  "Returns the new palette's id.
+
+Asserts that color-array is really #(an array), which is necessary due to json:stringify"  
+  (assert (arrayp color-array))
   (getf
    (cl-dbi:fetch
     (cl-dbi:execute
-     (cl-dbi:prepare connection "INSERT INTO palette(name) VALUES(?) RETURNING ID")
-     (list name)))
+     (cl-dbi:prepare connection "INSERT INTO palette(name, color_array) VALUES(?, ?) RETURNING ID")
+     (list name (json:stringify color-array))))
    :ID))
 
 (defun hex-color->rgb (hex-color)
@@ -29,42 +33,22 @@
 	   (ash g 8)
 	   b)))
 
-(defun insert-rgb (connection palette-id hex-color)
-  (multiple-value-bind (r g b) (hex-color->rgb hex-color)
-    (cl-dbi:execute
-     (cl-dbi:prepare connection "INSERT INTO palette_color (palette_id, r, g, b) VALUES (?, ?, ?, ?)")
-     (list palette-id r g b))))
-
-(defun update-rgb (connection color-id hex-color)
-  (multiple-value-bind (r g b) (hex-color->rgb hex-color)
-    (cl-dbi:execute
-     (cl-dbi:prepare connection "UPDATE palette_color SET r = ?, g = ?, b = ? WHERE ID = ?")
-     (list r g b color-id))))
-
 (defun get-palette (connection id)
-  (let ((palette-name (getf
-		       (cl-dbi:fetch
-			(cl-dbi:execute
-			 (cl-dbi:prepare connection "SELECT name FROM palette WHERE ID = ?" )
-			 (list id)))
-		       :|name|))
-	(colors (cl-dbi:fetch-all
-		 (cl-dbi:execute
-		  (cl-dbi:prepare connection "SELECT ID, r, g, b FROM palette_color WHERE palette_id = ?" )
-		  (list id)))))
-    (assert palette-name)
+  (let* ((palette (cl-dbi:fetch
+		   (cl-dbi:execute
+		    (cl-dbi:prepare connection "SELECT name, color_array FROM palette WHERE ID = ?" )
+		    (list id))))
+	 (palette-name (getf palette
+			     :|name|))
+	 ;; returns #("FF00AA" "C0FFEE" "123456" ....)
+	 (colors (json:parse (getf palette
+				   :|color_array|))))
     (hash ("name" palette-name)
-	  ("colors" (mapcar (lambda (c)
-			      (format t "Color: ~a~%" c)
-			      (let* ((id (getf c :|ID|))
-				     (r (getf c :|r|))
-				     (g (getf c :|g|))
-				     (b (getf c :|b|))
-				     (hex (rgb->hex-color r g b)))
-				(assert r)
-				(assert g)
-				(format t "Loading ~a~%" hex)
-				(hash ("id" id)
-				      ("color" hex)
-				      ("name" (format nil "color~d" id)))))
-			    colors)))))
+	  ("colors" colors))))
+
+(defun update-palette-colors (connection id colors)
+  (let ((colors (json:stringify (if (vectorp colors)
+				    colors
+				    (coerce colors 'vector)))))
+    (cl-dbi:execute (cl-dbi:prepare connection "UPDATE palette SET color_array = ? WHERE ID = ?")
+		    (list colors id))))
