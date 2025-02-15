@@ -1,0 +1,111 @@
+<script>
+
+  function getCursorPosition(event) {
+      let target = event.currentTarget;
+      
+      const rect = target.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+      return [x, y];
+  }
+  
+  function getCtx() {
+      const canvas = document.querySelector('#sprite_canvas');
+      if(!canvas.getContext) {
+	  alert('no getContext on canvas, please run a modern browser');
+	  return null;
+      }
+
+      return [canvas.getContext("2d"), canvas];
+  }
+  
+  // fucking hell this would be insecure in a real client/server env :D
+  let palette = {{colors}};
+  let pixels = {{pixels}};
+
+  
+  function pixels_to_2d(pix) {
+      let keys = Object.keys(pix);
+      let acc = []
+      let n = keys.length;
+      for(let i=0; i < n; i++)
+      {
+	  let v = pix[i.toString()];
+	  if((typeof v) != "number") {
+	      v = pixels_to_2d(v);
+	  }
+
+	  acc.push(v);
+      }
+      return acc;
+  }
+
+  let real_pixels = pixels_to_2d(pixels);
+
+  function draw(canvas, ctx, pix_w, pix_h) {
+      console.assert(ctx);
+
+      ctx.fillStyle = 'red';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const w = real_pixels[0].length,
+	    h = real_pixels.length;
+
+      console.log(`size is ${w}, ${h}`);
+
+      for(let y = 0; y < h ; y++) {
+	  for(let x = 0; x < w; x++) {
+	      let index = real_pixels[y][x];
+	      let color = palette[index];
+
+	      ctx.fillStyle = color;
+	      ctx.fillRect(x * pix_w + 5, y * pix_h + 5, pix_w - 10, pix_h - 10);
+	  }
+      }
+  }
+
+  function mousehandler(pix_w, pix_h) {
+      return function (e) {
+	  let [ctx, canvas] = getCtx();
+	  let [mouse_x, mouse_y] = getCursorPosition(e);
+	  
+	  let x = Math.ceil(mouse_x / pix_w) - 1,
+	      y = Math.ceil(mouse_y / pix_h) - 1;
+
+	  real_pixels[y][x] = 1;
+	  draw(canvas, ctx, pix_w, pix_h);
+	  console.log('drawn');
+      }
+  }
+
+  window.addEventListener('DOMContentLoaded', _ => {
+      let [ctx, canvas] = getCtx();
+
+      const pix_w = Math.floor(canvas.width / real_pixels[0].length);
+      const pix_h = Math.floor(canvas.height / real_pixels.length);
+      
+      draw(canvas, ctx, pix_w, pix_h);
+      
+      canvas.addEventListener('mouseup', mousehandler(pix_w, pix_h));
+      canvas.addEventListener('mousemove', e => {
+	  let handler = mousehandler(pix_w, pix_h);
+
+	  if (e.buttons > 0)
+	      handler(e);
+      });
+
+      document.querySelector('#save_sprite').addEventListener('click', async function(_) {
+	  let resp = await fetch('/save-lisp-sprite/{{id}}', {method: 'POST',
+							      body: JSON.stringify(real_pixels)});
+	  if(resp.status != 204) {
+	      let txt = await resp.text();
+	      alert(`Save failed: ${resp.status} ${txt}`);
+	  }
+      });
+  });
+
+</script>
+
+<canvas width="800" height="600" id="sprite_canvas"> </canvas>
+
+<button id="save_sprite">Save sprite</button>

@@ -25,7 +25,30 @@
   </li>
   {{/sprites}}
 
+  {{#lisp-sprites}}
+  <li>
+    <a href="/edit-sprite/{{id}}">{{name}} </a>
+  </li>
+  {{/lisp-sprites}}
+
 </ul>
 
 <h4>New sprite</h4>
 <a href="/import-sprite">Import a new sprite </a>
+
+<h5>New lisp-sprite</h5>
+<form action="/new-lisp-sprite" method="post">
+  <label> Name: <input type="text" name="name" /> </label>
+  <label> Width: <input type="number" name="w"  /></label>
+  <label> Height: <input type="number" name="h"  /></label>
+
+  <label> Chosen palette:
+    <select name="palette_id">
+      {{#palettes}}
+      <option value="{{id}}"> {{name}} </option>
+      {{/palettes}}
+    </select>
+  </label>
+  
+  <input type="submit" value="Create!"  />
+</form>

@@ -1,5 +1,7 @@
 (defpackage linnarope.views.sprite
   (:use :cl)
+  (:local-nicknames (:json :com.inuoe.jzon))
+  (:export :sprites)
   (:import-from :lisp-fixup :filename)
   (:import-from :easy-routes :defroute)
   (:import-from :linnarope.middleware :@db :*connection* :deftab :defsubtab))
@@ -16,7 +18,24 @@
 			    (cl-dbi:execute
 			     (cl-dbi:prepare
 			      *connection*
-			      "SELECT * FROM sprite")))))))
+			      "SELECT * FROM sprite")))))
+      (:lisp-sprites . ,(mapcar (lambda (sprite)
+				  `((:id . ,(getf sprite :id))
+				    (:name . ,(getf sprite :|name|))))
+				(cl-dbi:fetch-all
+				 (cl-dbi:execute
+				  (cl-dbi:prepare
+				   *connection*
+				   "SELECT id, name FROM lisp_sprite")))))
+      (:palettes . ,(mapcar (lambda (p)
+			      `((:id . ,(getf p :id))
+				(:name . ,(getf p :|name|))))
+			    (cl-dbi:fetch-all
+			     (cl-dbi:execute
+			      (cl-dbi:prepare
+			       *connection*
+			       "SELECT id, name FROM palette")))))))
+				
 
 (defsubtab (import-sprite "/import-sprite" "import-sprite.html" sprites) () (&get path)
   (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))
@@ -55,3 +74,29 @@
 		  (list id))
   (setf (hunchentoot:return-code*) 204)
   "")
+
+(defsubtab (edit-lisp-sprite "/edit-sprite/:id" "edit-sprite.html" sprites) () ()
+  (let* ((data (cl-dbi:fetch-all
+		(cl-dbi:execute
+		 (cl-dbi:prepare *connection*
+				 "
+SELECT *
+FROM lisp_sprite spr 
+JOIN palette pl ON spr.palette_id = pl.id
+JOIN lisp_sprite_pixel pxl ON spr.id = pxl.sprite_id
+WHERE spr.id = ?")
+		 (list id))))
+	 (colors-json (getf (first data) :|color_array|))
+	 ;;(colors (json:parse colors-json))
+	 (pixels (reduce (lambda (acc row)
+			     (let ((x (getf row :|x|))
+				   (y (getf row :|y|))
+				   (color_index (getf row :|color_index|)))
+			       (unless (gethash y acc)
+				 (setf (gethash y acc) (make-hash-table :test 'equal)))
+			       (setf (gethash x (gethash y acc)) color_index)
+			       acc))
+			 data :initial-value (make-hash-table :test 'equal))))
+    `((:colors . ,colors-json)
+      (:pixels . ,(json:stringify pixels))
+      (:id . ,id))))

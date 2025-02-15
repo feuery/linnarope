@@ -38,6 +38,8 @@
 		  :components ((:file "root")
 			       (:file "sprite")
 			       (:file "complete-map")))
+		 (:module "routes"
+		  :components ((:file "sprite")))
 		 (:file "main")))))
 
 ;; (asdf:make "linnarope-resource-handler")

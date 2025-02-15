@@ -1,5 +1,6 @@
 (defpackage linnarope.views.root
   (:use :cl)
+  (:export :read-arrayed-form)
   (:import-from :linnarope.middleware :list-all-js-resources :@db :*connection* :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
   (:import-from :lisp-fixup :filename :with-output-to-real-string)
@@ -54,7 +55,11 @@
 		 :display "block")
 		("#new_color"
 		 :display "block"
-		 :margin-bottom "20px"))))
+		 :margin-bottom "20px")
+
+		;; sprite-editor css
+		("canvas"
+		 :display "block"))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
@@ -83,17 +88,6 @@
       `((:palettes .
 		   ,palettes))))
 
-;; (deftab (sprites "/sprites" "sprites.html")
-;;     (let ((sprites (mapcar (lambda (palette)
-;; 			      `((:id . ,(getf palette :id))
-;; 				(:name . ,(getf palette :|name|))))
-;; 			    (cl-dbi:fetch-all
-;; 			     (cl-dbi:execute
-;; 			      (cl-dbi:prepare
-;; 				  *connection*
-;; 				  "SELECT * FROM palette"))))
-
-;; (route-symbol route-url component-filename parent-tab)
 (defsubtab (new-palette "/new-palette" "new-palette.html" palettes :post) () (&post name)
   (assert name)
   `((:name . ,name)
