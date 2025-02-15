@@ -40,3 +40,26 @@
     
     (setf (hunchentoot:return-code*) 204)
     ""))
+
+(defroute palette-changer ("/sprite/:id/change-palette" :method :post :decorators (@db)) ()
+  (let* ((body (json:parse (hunchentoot:raw-post-data :force-text t)))
+	 (palette-id (gethash "palette-id" body)))
+    (assert palette-id)
+    (cl-dbi:execute
+     (cl-dbi:prepare *connection*
+		     "
+UPDATE lisp_sprite
+SET palette_id = ?
+WHERE ID = ?")
+     (list palette-id id))
+
+    (let ((palette (getf (cl-dbi:fetch
+			  (cl-dbi:execute
+			   (cl-dbi:prepare
+			    *connection*
+			    "SELECT color_array FROM palette WHERE ID = ?")
+			   (list palette-id)))
+			 :|color_array|)))
+      palette)))
+  
+    

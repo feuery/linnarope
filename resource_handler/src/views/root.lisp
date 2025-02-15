@@ -59,7 +59,16 @@
 
 		;; sprite-editor css
 		("canvas"
-		 :display "block"))))
+		 :display "block")
+		(.two-column-container
+		 :display "flex"
+		 :justify-content "space-evenly"
+		 :flex-direction "row")
+
+		(.left-sidebar
+		 :display "flex"
+		 :justify-content "space-evenly"
+		 :flex-direction "column"))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)

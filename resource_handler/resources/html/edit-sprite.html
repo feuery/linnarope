@@ -94,6 +94,22 @@
 	      handler(e);
       });
 
+      document.querySelector('#palette_chooser').addEventListener('change', async function(e) {
+	  let new_palette_id = e.currentTarget.value;
+
+	  let resp = await fetch('/sprite/{{id}}/change-palette', {method: 'POST',
+								   body: JSON.stringify({'palette-id': new_palette_id})});
+
+	  if(!resp.ok) {
+	      let txt = await resp.text();
+	      alert(`Palette change failed: ${resp.status} ${txt}`);
+	  }
+
+	  let new_palette = await resp.json();
+	  palette = new_palette;
+	  draw(canvas, ctx, pix_w, pix_h);
+      });
+
       document.querySelector('#save_sprite').addEventListener('click', async function(_) {
 	  let resp = await fetch('/save-lisp-sprite/{{id}}', {method: 'POST',
 							      body: JSON.stringify(real_pixels)});
@@ -106,6 +122,18 @@
 
 </script>
 
-<canvas width="800" height="600" id="sprite_canvas"> </canvas>
-
-<button id="save_sprite">Save sprite</button>
+<div class="two-column-container"Z>
+  <canvas width="800" height="600" id="sprite_canvas"> </canvas>
+  
+  <div class="left-sidebar">
+    <div>
+      <h1>Palette</h1>
+      <select id="palette_chooser">
+	{{#palettes}}
+	<option value="{{palette-id}}">{{palette-name}}</option>
+	{{/palettes}}
+      </select>
+    </div>
+    <button id="save_sprite">Save sprite</button>
+  </div>
+</div>
