@@ -42,10 +42,12 @@
 
   let real_pixels = pixels_to_2d(pixels);
 
+  let background_color = "#FF0000";
+
   function draw(canvas, ctx, pix_w, pix_h) {
       console.assert(ctx);
 
-      ctx.fillStyle = 'red';
+      ctx.fillStyle = background_color;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const w = real_pixels[0].length,
@@ -166,6 +168,13 @@
 	      alert(`Save failed: ${resp.status} ${txt}`);
 	  }
       });
+
+      let bgcolor_input = document.querySelector('#bgcolor');
+      bgcolor_input.value = background_color;
+      bgcolor_input.addEventListener('input', e => {
+	  background_color = e.currentTarget.value;
+	  draw(canvas, ctx, pix_w, pix_h);
+      });
   });
 
 </script>
@@ -183,7 +192,10 @@
 	<option value="{{palette-id}}">{{palette-name}}</option>
 	{{/palettes}}
       </select>
-      <canvas id="chosen-palette" width="100" height="200"> </canvas>	
+      <canvas id="chosen-palette" width="100" height="200"> </canvas>
+
+      <h1>Background color</h1>
+      <input type="color" id="bgcolor" />
     </div>
     <button id="save_sprite">Save sprite</button>
   </div>
