@@ -68,7 +68,10 @@
 		(.left-sidebar
 		 :display "flex"
 		 :justify-content "space-evenly"
-		 :flex-direction "column"))))
+		 :flex-direction "column"
+		 :max-width "10%")
+		(button
+		 :display :block))))
 
 (deftab (maps "/maps" "maps.html") 
     (let ((maps (mapcar (lambda (row)
@@ -279,6 +282,12 @@ WHERE og.map_id = ?
 	(progn
 	  (setf (hunchentoot:return-code*) 404)
 	  ""))))
+
+(defvar *js-resource-path* (pathname (format nil "~aresources/js/" (asdf:system-source-directory "linnarope-resource-handler"))))
+
+(defun list-all-js-resources ()
+  (cl-fad:list-directory 
+   *js-resource-path*))
 
 (defmacro js-routes ()
   "Iterates all the *.js files in /resource_handler/resources/js/ and creates a defroute delegating the actual finding into find-js function.

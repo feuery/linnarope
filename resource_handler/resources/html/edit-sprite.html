@@ -23,6 +23,9 @@
   let palette = {{colors}};
   let pixels = {{pixels}};
 
+  // if true, canvas will render "full pixels" and resize itself in the way that one pixel actually is a pixel
+ let showfinal = false;
+ let shrank = false;
   
   function pixels_to_2d(pix) {
       let keys = Object.keys(pix);
@@ -41,8 +44,16 @@
   }
 
   let real_pixels = pixels_to_2d(pixels);
-
   let background_color = "#FF0000";
+
+ function pixels_w() {
+     return real_pixels[0].length;
+ }
+
+ function pixels_h() {
+     return real_pixels.length;
+ }
+ 
 
   function draw(canvas, ctx, pix_w, pix_h) {
       console.assert(ctx);
@@ -61,7 +72,10 @@
 	      let color = palette[index];
 
 	      ctx.fillStyle = color;
-	      ctx.fillRect(x * pix_w + 5, y * pix_h + 5, pix_w - 10, pix_h - 10);
+	      if(showfinal) {
+		  ctx.fillRect(x * pix_w, y * pix_h, pix_w, pix_h);
+	      }
+	      else ctx.fillRect(x * pix_w + 5, y * pix_h + 5, pix_w - 10, pix_h - 10);
 	  }
       }
   }
@@ -116,16 +130,21 @@
       }
   }
 
+ function calculate_pixwh(canvas) {
+     let pix_w = Math.ceil(canvas.width / pixels_w());
+     let pix_h = Math.ceil((canvas.height / pixels_h()));
+
+     return [pix_w, pix_h];
+ }
+
+
   window.addEventListener('DOMContentLoaded', _ => {
       let [ctx, canvas] = getCtx();
 
-      const pix_w = Math.floor(canvas.width / real_pixels[0].length);
-      const pix_h = Math.floor(canvas.height / real_pixels.length);
-      
-      draw(canvas, ctx, pix_w, pix_h);
-      drawPalette();
-      resetSelectedColor();
+      //set up the dimensions 
+      let [pix_w, pix_h] = calculate_pixwh(canvas);
 
+      //set up the event handlers      
       let palette_canvas = document.querySelector('#chosen-palette');
       palette_canvas.addEventListener('mouseup', paletteMouseHandler());
       palette_canvas.addEventListener('mousemove', e => {
@@ -175,12 +194,51 @@
 	  background_color = e.currentTarget.value;
 	  draw(canvas, ctx, pix_w, pix_h);
       });
-  });
 
+      let finalize_input = document.querySelector('#show_final');
+      showfinal = finalize_input.checked;
+      finalize_input.addEventListener('click', e => {
+	  showfinal = e.target.checked;
+	  draw(canvas, ctx, pix_w, pix_h);
+      });
+
+      // handle shrinking
+      let shrink_pxs = document.querySelector('#shrink_pixels');
+      shrink_pxs.addEventListener('click', e => {
+	  shrank = e.target.checked;
+
+	  if(shrank) {
+	      canvas.width = pixels_w();
+	      canvas.height = pixels_h();
+	  }
+	  else {
+	      canvas.width = 800;
+	      canvas.height = 600;
+	  }
+
+	  let [pix_w2, pix_h2] = calculate_pixwh(canvas);
+	  pix_w = pix_w2;
+	  pix_h = pix_h2;
+
+	  draw(canvas, ctx, pix_w, pix_h);
+      });
+
+      // click shrink_pxs twice to make event handler set up dimensions correctly
+      shrink_pxs.click();
+      shrink_pxs.click();
+
+      // and finally render the initial, saved sprite in the correct form (regarding the #show_final checked state)
+      draw(canvas, ctx, pix_w, pix_h);
+      drawPalette();
+      resetSelectedColor();
+  });
+	
 </script>
 
-<div class="two-column-container"Z>
-  <canvas width="800" height="600" id="sprite_canvas"> </canvas>
+<div class="two-column-container">
+    <div style="display:block;">
+	<canvas width="800" height="600" id="sprite_canvas"> </canvas>
+    </div>
   
   <div class="left-sidebar">
     <div>
@@ -196,7 +254,18 @@
 
       <h1>Background color</h1>
       <input type="color" id="bgcolor" />
+      <label>
+	<input type="checkbox" id="show_final" />
+	Show final sprite (for exporting?)
+      </label>
+
+      <label>
+	  <input type="checkbox" id="shrink_pixels" />
+	  Shrink pixels (make 1px in sprite = 1px in display)
+      </label>
+
+      <button id="save_sprite">Save sprite to db</button>      
+      To export the sprite, use your browser's native Save Image As button in the context menu
     </div>
-    <button id="save_sprite">Save sprite</button>
   </div>
 </div>

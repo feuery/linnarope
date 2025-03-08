@@ -20,6 +20,8 @@
   (lisp-fixup:slurp-utf-8 
    (pathname (format nil "~a/~a" *js-resource-path* filename))))
 
+(defvar *js-resource-path* (pathname (format nil "~aresources/js/" (asdf:system-source-directory "linnarope-resource-handler"))))
+
 (defun list-all-js-resources ()
   (cl-fad:list-directory 
    *js-resource-path*))
