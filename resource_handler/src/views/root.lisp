@@ -1,12 +1,22 @@
 (defpackage linnarope.views.root
   (:use :cl)
   (:export :read-arrayed-form)
-  (:import-from :linnarope.middleware :list-all-js-resources :@db :*connection* :@html :@css :deftab :defsubtab)
+  (:import-from :linnarope.middleware :list-all-js-resources :@db :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
   (:import-from :lisp-fixup :filename :with-output-to-real-string)
   (:local-nicknames (:palette-db :linnarope.db.palettes)))
 
 (in-package :linnarope.views.root)
+
+
+;; nyt me teemme niin että:
+;; - sqlite ja cl- dbi helvettiin, possua ja postmodernia (ja halisql????) tilalle
+;; - tiedostoexporttaus ja -importtaus :zip illä (https://github.com/bluelisp/zip)
+;; miten enginen pään lataus sitten toimii??????
+;; - lyödään engineen ecl kiinni, otetaan :zipin ympärille tehdyt latauskoodit, paljastetaan ecl:lle tarpeeksi rajapintaa jolla (load-game-zip ...) voisi
+;;   lispinä ladata zipin ja räpeltää enginen tilaa. Miten kuvat siirretään #(taulukosta) SDL_Surfaceiksi? Lolemt, mutta https://wiki.libsdl.org/SDL2_image/IMG_Load_RW
+;;   ja https://wiki.libsdl.org/SDL2/SDL_RWFromConstMem voivat olla avuksi
+
 
 (defroute css ("/css" :method :get :decorators (@css)) ()
   (cl-css:css `((body
@@ -74,31 +84,12 @@
 		 :display :block))))
 
 (deftab (maps "/maps" "maps.html") 
-    (let ((maps (mapcar (lambda (row)
-			  (let* ((id (getf row :id))
-				 (tmx-path (getf row :|tmx_path|)))
-			    `((:id . ,id)
-			      (:name . ,tmx-path))))
-			
-			(cl-dbi:fetch-all
-			 (cl-dbi:execute
-			  (cl-dbi:prepare
-			   *connection*
-			   "SELECT * FROM map"))))))
-      `((:maps . ,maps))))
+    `((:maps . ,(postmodern:query 
+		 "SELECT id, tmx_path as name FROM map" :alists))))
 
 (deftab (palettes "/palettes" "palettes.html")
-    (let ((palettes (mapcar (lambda (palette)
-			      `((:id . ,(getf palette :id))
-				(:name . ,(getf palette :|name|))))
-			    (cl-dbi:fetch-all
-			     (cl-dbi:execute
-			      (cl-dbi:prepare
-				  *connection*
-				  "SELECT * FROM palette"))))))
-      (format t "palettes ~a~%" palettes)
-      `((:palettes .
-		   ,palettes))))
+    `((:palettes . ,(postmodern:query
+		     "SELECT id, name FROM palette" :alists))))
 
 (defsubtab (new-palette "/new-palette" "new-palette.html" palettes :post) () (&post name)
   (assert name)
@@ -110,7 +101,7 @@
 
 ;; (defsubtab (current-map "/map/:id" "current_map.html" maps) ()
 (defsubtab (edit-palette "/palette/:id" "palette-id.html" palettes) () ()
-  (let ((palette (palette-db:get-palette *connection* id)))
+  (let ((palette (palette-db:get-palette id)))
     (cl-hash-util:with-keys ("colors" "name") palette
       `((:name . ,name)
 	(:palette-id . ,id)
@@ -125,33 +116,22 @@
     (:dst-map-id . ,(getf row :|dst_map|))))
 
 (defun get-warpzone-objects (map-id &optional (kind :unpopulated))
-  (assert *connection*)
   (let* ((q (case kind
 	      (:unpopulated "SELECT o.id, o.name, o.x, o.y
 FROM object o
 JOIN objectgroup og ON og.id = o.group_id
-WHERE og.map_id = ?
-      AND warp_zone = 1
+WHERE og.map_id = $1
+      AND warp_zone
       AND NOT EXISTS (SELECT * FROM warp_connection WHERE src_map = og.map_id and src_warpzone = o.internal_id)")
 	      
-	      (:populated "SELECT o.id, o.name, o.x, o.y, wc.dst_map
+	      (:populated "SELECT o.id, o.name, o.x, o.y, wc.dst_map as \"dst-map-id\"
 FROM object o
 JOIN objectgroup og ON og.id = o.group_id
 JOIN warp_connection wc ON wc.src_warpzone = o.internal_id AND wc.src_map = og.map_id
-WHERE og.map_id = ?
-      AND warp_zone = 1")))
+WHERE og.map_id = $1
+      AND warp_zone"))))
 
-	 (results
-	   (cl-dbi:fetch-all
-	    (cl-dbi:execute
-	     (cl-dbi:prepare
-	      *connection*
-	      q)
-	     (list map-id)))))
-    
-    (mapcar
-     #'transform-obj
-     results)))
+    (postmodern:query q map-id :alists)))
 
 (defsubtab (current-map "/map/:id" "current_map.html" maps) () ()
   (let ((warpzone-objects (get-warpzone-objects id))
@@ -173,13 +153,7 @@ WHERE og.map_id = ?
 			      (cl-fad:list-directory path)))))))
 
 (defsubtab (connect-warpzone-map-chooser "/connect-map/:src-map-id/:src-warpzone-id" "connect-warpzone-map-chooser.html" maps) () ()
-  (let ((maps (mapcar
-	       (lambda (m)
-		 `((:id . ,(getf m :|ID|))
-		   (:name . ,(filename (getf m :|tmx_path|)))))
-	       (cl-dbi:fetch-all (cl-dbi:execute (cl-dbi:prepare *connection*
-								"SELECT id, tmx_path FROM map WHERE id <> ?")
-						 (list src-map-id))))))
+  (let ((maps (postmodern:query "SELECT id, tmx_path as name FROM map WHERE id <> $1" src-map-id :alists)))
     `((:maps . ,maps)
       (:src-map-id . ,src-map-id)
       (:src-warpzone-id . ,src-warpzone-id))))
@@ -200,7 +174,7 @@ WHERE og.map_id = ?
 (defroute map-add-handler ("/choose-map" :method :get :decorators (@db)) (&get tmx-file)
   (if tmx-file
       (progn 
-	(linnarope.db.maps:save-map-to-db! *connection* tmx-file)
+	(linnarope.db.maps:save-map-to-db! tmx-file)
 	(easy-routes:redirect 'maps))
       (progn
 	(setf (hunchentoot:content-type*) "text/html")
@@ -216,7 +190,7 @@ WHERE og.map_id = ?
   (assert src-warpzone-id)
   (assert dst-map-id)
   (assert dst-warpzone-id)
-  (linnarope.db.maps:insert-warp-connection *connection* src-map-id src-warpzone-id dst-map-id dst-warpzone-id)
+  (linnarope.db.maps:insert-warp-connection src-map-id src-warpzone-id dst-map-id dst-warpzone-id)
   (easy-routes:redirect 'maps))
 
 (defun read-arrayed-form ()
@@ -242,7 +216,7 @@ WHERE og.map_id = ?
 
 (defroute palette-saver ("/save-palette" :method :post :decorators (@db)) ()
   (cl-hash-util:with-keys ("name" "color") (read-arrayed-form)
-    (linnarope.db.palettes:insert-palette *connection* name (coerce color 'vector)))  
+    (linnarope.db.palettes:insert-palette name (coerce color 'vector)))  
   (easy-routes:redirect 'palettes))
 
 (defroute palette-editor ("/update-palette" :method :post :decorators (@db)) ()
@@ -250,24 +224,20 @@ WHERE og.map_id = ?
     (cl-hash-util:with-keys ("palette_id" "color") form
       (assert palette_id)
       (format t "color: ~a~%" color)
-      (palette-db:update-palette-colors *connection* palette_id color)
+      (palette-db:update-palette-colors palette_id color)
       (easy-routes:redirect 'palettes))))
     
 
 
 (defroute map-img ("/map/:id/img" :method :get :decorators (@db)) ()
-  (let* ((q (cl-dbi:prepare *connection* "SELECT png_path FROM map WHERE ID = ?"))
-	 (rs (cl-dbi:fetch-all (cl-dbi:execute q (list id))))
-	 (row (first rs))
-	 (png-file-path (getf row :|png_path|))
-	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
-    (setf (hunchentoot:content-type*) "image/png")
-    bytes))
+  (setf (hunchentoot:content-type*) "image/png")
+  (lisp-fixup:slurp-bytes (caar (postmodern:query "SELECT png_path FROM map WHERE ID = $1" id))))
 
 (defroute delete-warp ("/warp-for/:map-id/:src-object-id" :method :delete :decorators (@db)) ()
-  (cl-dbi:execute (cl-dbi:prepare *connection*
-				  "DELETE FROM warp_connection WHERE src_map = ? AND src_warpzone = ?")
-		  (list map-id (linnarope.db.maps:get-object-internal-id *connection* src-object-id map-id)))
+  (postmodern:execute
+   "DELETE FROM warp_connection WHERE src_map = $1 AND src_warpzone = $2"
+   map-id
+   (linnarope.db.maps:get-object-internal-id src-object-id map-id))
   (setf (hunchentoot:return-code*) 204)
   "")
 

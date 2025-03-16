@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: linnarope
+      POSTGRES_PASSWORD: linnarope
+      POSTGRES_DB: linnarope
+      POSTGRES_INITDB_ARGS: '--locale en_US.UTF-8'

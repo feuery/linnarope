@@ -3,7 +3,7 @@
   (:import-from :lisp-fixup :filename)
   (:import-from :easy-routes :defroute)
   (:import-from :linnarope.db.maps :*whole-map-png-location* :generate-whole-map-png)
-  (:import-from :linnarope.middleware :@db :*connection* :deftab :defsubtab))
+  (:import-from :linnarope.middleware :@db :deftab :defsubtab))
 
 (in-package :linnarope.views.complete-map)
 

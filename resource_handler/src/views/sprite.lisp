@@ -4,37 +4,17 @@
   (:export :sprites)
   (:import-from :lisp-fixup :filename)
   (:import-from :easy-routes :defroute)
-  (:import-from :linnarope.middleware :@db :*connection* :deftab :defsubtab))
+  (:import-from :linnarope.middleware :@db :deftab :defsubtab))
 
 (in-package :linnarope.views.sprite)
-     
+
 
 (deftab (sprites "/sprites" "sprites.html")
-    `((:sprites . ,(mapcar (lambda (sprite)
-			     `((:id . ,(getf sprite :|internal_id|))
-			       (:name . ,(filename (getf sprite :|png_path|)))))
-
-			   (cl-dbi:fetch-all
-			    (cl-dbi:execute
-			     (cl-dbi:prepare
-			      *connection*
-			      "SELECT * FROM sprite")))))
-      (:lisp-sprites . ,(mapcar (lambda (sprite)
-				  `((:id . ,(getf sprite :id))
-				    (:name . ,(getf sprite :|name|))))
-				(cl-dbi:fetch-all
-				 (cl-dbi:execute
-				  (cl-dbi:prepare
-				   *connection*
-				   "SELECT id, name FROM lisp_sprite")))))
-      (:palettes . ,(mapcar (lambda (p)
-			      `((:id . ,(getf p :id))
-				(:name . ,(getf p :|name|))))
-			    (cl-dbi:fetch-all
-			     (cl-dbi:execute
-			      (cl-dbi:prepare
-			       *connection*
-			       "SELECT id, name FROM palette")))))))
+    `((:sprites . ,(postmodern:query "SELECT internal_id as \"id\", name FROM sprite" :alists))
+      (:lisp-sprites . ,(postmodern:query
+			 "SELECT id, name FROM lisp_sprite" :alists))
+      (:palettes . ,(postmodern:query
+		     "SELECT id, name FROM palette" :alists))))
 				
 
 (defsubtab (import-sprite "/import-sprite" "import-sprite.html" sprites) () (&get path)
@@ -52,7 +32,7 @@
 (defroute sprite-import-handler ("/choose-sprite" :method :get :decorators (@db)) (&get png-file)
   (if png-file
       (progn 
-	(linnarope.db.sprites:import-sprite! *connection* png-file)
+	(linnarope.db.sprites:import-sprite! png-file)
 	(easy-routes:redirect 'sprites))
       (progn
 	(setf (hunchentoot:content-type*) "text/html")
@@ -60,51 +40,44 @@
 	"<p>png-files is nil</p>")))
 
 (defroute sprite-img ("/sprite/:id" :method :get :decorators (@db)) ()
-  (let* ((q (cl-dbi:prepare *connection* "SELECT png_path FROM sprite WHERE internal_id = ?"))
-	 (rs (cl-dbi:fetch-all (cl-dbi:execute q (list id))))
-	 (row (first rs))
-	 (png-file-path (getf row :|png_path|))
-	 (bytes (lisp-fixup:slurp-bytes png-file-path)))
-    (setf (hunchentoot:content-type*) "image/png")
-    bytes))
+  (if (equalp id "")
+      (progn
+	(setf (hunchentoot:return-code*) 500)
+	"")
+      (let ((data (caar (postmodern:query "SELECT data FROM sprite WHERE internal_id = $1" id))))
+	(setf (hunchentoot:content-type*) "image/png")
+	data)))
 
 (defroute delete-sprite ("/sprite/:id" :method :delete :decorators (@db)) ()
-  (cl-dbi:execute (cl-dbi:prepare *connection*
-				  "DELETE FROM sprite WHERE internal_id = ?")
-		  (list id))
+  (postmodern:execute "DELETE FROM sprite WHERE internal_id = $1" id)
   (setf (hunchentoot:return-code*) 204)
   "")
 
 (defsubtab (edit-lisp-sprite "/edit-sprite/:id" "edit-sprite.html" sprites) () ()
-  (let* ((data (cl-dbi:fetch-all
-		(cl-dbi:execute
-		 (cl-dbi:prepare *connection*
-				 "
+  (let* ((data (coerce (postmodern:query
+			"
 SELECT *
 FROM lisp_sprite spr 
 JOIN palette pl ON spr.palette_id = pl.id
 JOIN lisp_sprite_pixel pxl ON spr.id = pxl.sprite_id
-WHERE spr.id = ?")
-		 (list id))))
-	 (colors-json (getf (first data) :|color_array|))
-	 (palette-id (getf (first data) :|palette_id|))
-	 (palettes (mapcar (lambda (r)
-			     (assert (getf r :id))
-			     (assert (getf r :|name|))
-			     `((:palette-name . ,(getf r :|name|))
-			       (:palette-id . ,(getf r :id))))
-			   (cl-dbi:fetch-all
-			    (cl-dbi:execute
-			     (cl-dbi:prepare *connection*
-					     "SELECT ID, name FROM palette")))))
+WHERE spr.id = $1"  id :array-hash) 'list))
+	 (colors-json (gethash "color_array" (first data)))
+	 (palette-id (gethash "palette_id" (first data)))
+	 (palettes (map 'list
+			(lambda (r)
+			  (assert (gethash "id" r))
+			  (assert (gethash "name" r))
+			  `((:palette-name . ,(gethash "name" r))
+			    (:palette-id . ,(gethash "id" r))))
+			(postmodern:query "SELECT ID, name FROM palette" :array-hash)))
 	 (pixels (reduce (lambda (acc row)
-			     (let ((x (getf row :|x|))
-				   (y (getf row :|y|))
-				   (color_index (getf row :|color_index|)))
-			       (unless (gethash y acc)
-				 (setf (gethash y acc) (make-hash-table :test 'equal)))
-			       (setf (gethash x (gethash y acc)) color_index)
-			       acc))
+			   (let ((x (gethash "x" row))
+				 (y (gethash "y" row))
+				 (color_index (gethash "color_index" row)))
+			     (unless (gethash y acc)
+			       (setf (gethash y acc) (make-hash-table :test 'equal)))
+			     (setf (gethash x (gethash y acc)) color_index)
+			     acc))
 			 data :initial-value (make-hash-table :test 'equal))))
     (assert palette-id)
     `((:colors . ,colors-json)

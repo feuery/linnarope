@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :lisp-fixup :with-output-to-real-string)
   (:import-from :easy-routes :defroute)
-  (:export :list-all-js-resources :js-resource :defsubtab :deftab :tabs :@html :@db :*connection* :*database-name*))
+  (:export :list-all-js-resources :js-resource :defsubtab :deftab :tabs :@html :@db :*database-name*))
 
 (in-package :linnarope.middleware)
 
@@ -84,23 +84,27 @@
 (defvar *system-source-directory*
   (asdf:system-source-directory "linnarope-resource-handler"))
 
-(defvar *connection*
-  nil)
+(defvar db-user "linnarope")
+(defvar db-password "linnarope")
+(defvar db-db "linnarope")
+(defvar db-port 5432)
+(defvar db-host "localhost")
 
-(defvar *database-name* (format nil "~aresources.db" *system-source-directory*))
+(defvar db-config
+  (list :db db-db 
+	:username db-user
+	:password db-password
+	:host db-host 
+	:port db-port))
+
+(defun connect-toplevel ()
+  (destructuring-bind (&key db username password host port) db-config
+    (postmodern:connect-toplevel db username password host :port port)))
+
+;; (connect-toplevel)
 
 (defun @db (next)
-  (dbi:with-connection (conn :sqlite3 :database-name *database-name*)
-    (let ((*connection* conn))
-      ;; why is this not committing?
-      ;; (dbi:with-transaction *connection*
-      (let ((result (funcall next)))
-	;; (dbi:commit *connection*)
-	result))))
-
-;; (getf (first 
-;;        (@db (lambda ()
-;; 	      (cl-dbi:fetch-all 
-;; 	       (cl-dbi:execute (cl-dbi:prepare *connection* "SELECT count(*) as c FROM map")
-;; 			       (list ))))))
-;;       :|c|) ;; => 0
+  (destructuring-bind (&key db username password host port) db-config
+    (postmodern:with-connection (list db username password host :port port)
+      ;; (postmodern:with-transaction ()
+	(funcall next))))

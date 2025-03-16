@@ -14,14 +14,14 @@
 	       "str"
 	       "cl-fad"
 	       "log4cl"
-	       "cl-dbi"
 	       "alexandria"
 	       "xmls"
 	       "cl-css"
 	       "cl-mustache"
 	       "parse-number"
 	       "quri"
-	       "cl-hash-util")
+	       "cl-hash-util"
+	       "postmodern")
   :description "A resource handler for linnarope game"
   :components ((:module "src"
 		:components

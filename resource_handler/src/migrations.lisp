@@ -1,18 +1,18 @@
 (defpackage linnarope.migrations
   (:use :cl)
-  (:import-from :linnarope.middleware :@html :@db :*connection*)
+  (:import-from :linnarope.middleware :@html :@db)
   (:export :migrate))
 
 (in-package :linnarope.migrations)
 
 (defun exec (str)
-  (cl-dbi:execute (cl-dbi:prepare *connection* str)))
+  (postmodern:execute str))
 
 (defun migrate ()
   (@db (lambda ()
 	 (exec "
 CREATE TABLE IF NOT EXISTS map
-( ID INTEGER PRIMARY KEY AUTOINCREMENT,
+( ID SERIAL PRIMARY KEY,
   tmx_path TEXT UNIQUE,
   png_path TEXT UNIQUE,
   orientation TEXT NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS map
 )")
 	 (exec "
 CREATE TABLE IF NOT EXISTS layer
-( internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+( internal_id SERIAL PRIMARY KEY,
   ID INTEGER NOT NULL,
   name TEXT NOT NULL,
   width INTEGER NOT NULL,
@@ -36,26 +36,26 @@ CREATE TABLE IF NOT EXISTS layer
 )")
 	 (exec "
 CREATE TABLE IF NOT EXISTS objectgroup
-( internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+( internal_id SERIAL PRIMARY KEY,
   ID INTEGER,
   name TEXT NOT NULL,
   map_id INTEGER NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE)")
 
 	 (exec "
 CREATE TABLE IF NOT EXISTS object
-( internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+( internal_id SERIAL PRIMARY KEY,
   id TEXT NOT NULL,
   name TEXT NOT NULL,
   x INTEGER NOT NULL,
   y INTEGER NOT NULL,
   width INTEGER NOT NULL,
   height INTEGER NOT NULL,
-  group_id INTEGER NOT NULL REFERENCES objectgroup(ID) ON UPDATE CASCADE ON DELETE CASCADE,
+  group_id INTEGER NOT NULL REFERENCES objectgroup(internal_id) ON UPDATE CASCADE ON DELETE CASCADE,
   warp_zone BOOLEAN NOT NULL)
 ")
 	 (exec "
 CREATE TABLE IF NOT EXISTS warp_connection
-( internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+( internal_id SERIAL PRIMARY KEY,
   src_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
   src_warpzone INT NOT NULL UNIQUE REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE,
   dst_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -63,19 +63,20 @@ CREATE TABLE IF NOT EXISTS warp_connection
 
 	 (exec "
 CREATE TABLE IF NOT EXISTS sprite
-(  internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
-   png_path TEXT NOT NULL
+(  internal_id SERIAL PRIMARY KEY,
+   name TEXT NOT NULL,
+   data BYTEA NOT NULL
    -- no references anywhere as these are expected to just be magic handles one can reference in the c++ code, and are thus not bound to a single map
 );")
 	 (exec
 	  "CREATE TABLE IF NOT EXISTS palette
-(  ID INTEGER PRIMARY KEY AUTOINCREMENT,
+(  ID SERIAL PRIMARY KEY,
    name TEXT UNIQUE NOT NULL,
    color_array JSONB NOT NULL)")
 	 
 	 (exec
 	  "CREATE TABLE IF NOT EXISTS lisp_sprite
-( ID INTEGER PRIMARY KEY AUTOINCREMENT,
+( ID SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   w INT NOT NULL CHECK (w > 0),
   h INT NOT NULL CHECK (h > 0),
@@ -88,13 +89,9 @@ CREATE TABLE IF NOT EXISTS sprite
 )")
 
 	 (exec "CREATE TABLE IF NOT EXISTS lisp_sprite_pixel
-( ID INTEGER PRIMARY KEY AUTOINCREMENT,
-  sprite_id ID NOT NULL REFERENCES lisp_sprite(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+( ID SERIAL PRIMARY KEY,
+  sprite_id INT NOT NULL REFERENCES lisp_sprite(ID) ON DELETE CASCADE ON UPDATE CASCADE,
   x INTEGER NOT NULL,
   y INTEGER NOT NULL,
   color_index INT NOT NULL DEFAULT 0)")
-
-	 ;; (cl-dbi:execute (cl-dbi:prepare *connection*
-	 ;; 		     "INSERT INTO palette (name, color_array) VALUES (?,?)")
-	 ;; 		 (list "Paletti" (com.inuoe.jzon:stringify #("FF00AA" "C0FFEE" "123456"))))
 	 (format t "Migrated!~%"))))

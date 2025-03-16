@@ -6,17 +6,12 @@
 
 (in-package :linnarope.db.palettes)
 
-(defun insert-palette (connection name color-array)
+(defun insert-palette (name color-array)
   "Returns the new palette's id.
 
 Asserts that color-array is really #(an array), which is necessary due to json:stringify"  
   (assert (arrayp color-array))
-  (getf
-   (cl-dbi:fetch
-    (cl-dbi:execute
-     (cl-dbi:prepare connection "INSERT INTO palette(name, color_array) VALUES(?, ?) RETURNING ID")
-     (list name (json:stringify color-array))))
-   :ID))
+  (caar (postmodern:query "INSERT INTO palette(name, color_array) VALUES($1, $2) RETURNING ID" name (json:stringify color-array))))
 
 (defun hex-color->rgb (hex-color)
   (let* ((read-hex
@@ -33,22 +28,16 @@ Asserts that color-array is really #(an array), which is necessary due to json:s
 	   (ash g 8)
 	   b)))
 
-(defun get-palette (connection id)
-  (let* ((palette (cl-dbi:fetch
-		   (cl-dbi:execute
-		    (cl-dbi:prepare connection "SELECT name, color_array FROM palette WHERE ID = ?" )
-		    (list id))))
-	 (palette-name (getf palette
-			     :|name|))
+(defun get-palette (id)
+  (let* ((palette (aref (postmodern:query "SELECT name, color_array FROM palette WHERE ID = $1" id :array-hash) 0))
+	 (palette-name (gethash "name" palette))
 	 ;; returns #("FF00AA" "C0FFEE" "123456" ....)
-	 (colors (json:parse (getf palette
-				   :|color_array|))))
+	 (colors (json:parse (gethash "color_array" palette))))
     (hash ("name" palette-name)
 	  ("colors" colors))))
 
-(defun update-palette-colors (connection id colors)
+(defun update-palette-colors (id colors)
   (let ((colors (json:stringify (if (vectorp colors)
 				    colors
 				    (coerce colors 'vector)))))
-    (cl-dbi:execute (cl-dbi:prepare connection "UPDATE palette SET color_array = ? WHERE ID = ?")
-		    (list colors id))))
+    (postmodern:execute "UPDATE palette SET color_array = $1 WHERE ID = $2" colors id)))
