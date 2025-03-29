@@ -26,7 +26,8 @@
   :components ((:module "src"
 		:components
 		((:module "local-lib"
-		  :components ((:file "lisp-fixup")))
+		  :components ((:file "lisp-fixup")
+			       (:file "export")))
 		 (:file "middleware")
 		 (:file "migrations")
 		 (:file "tmxreader")
@@ -37,7 +38,8 @@
 		 (:module "views"
 		  :components ((:file "root")
 			       (:file "sprite")
-			       (:file "complete-map")))
+			       (:file "complete-map")
+			       (:file "export")))
 		 (:module "routes"
 		  :components ((:file "sprite")))
 		 (:file "main")))))

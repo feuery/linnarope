@@ -1,0 +1,35 @@
+<!-- <script> -->
+
+<!--   window.addEventListener('DOMContentLoaded', _ => { -->
+<!--       let btn = document.querySelector('#export'); -->
+<!--       btn.addEventListener('click', async function (_) { -->
+<!-- 	  let resp = await fetch(`/export`, {method: 'POST'}); -->
+<!-- 	  let txt = await resp.text(); -->
+	  
+<!-- 	  if(!resp.ok) {     -->
+<!-- 	      alert(`Export failed due to ${resp.status} ${txt}`); -->
+<!-- 	      return; -->
+<!-- 	  } -->
+
+<!-- 	  alert (txt); -->
+<!--       });					      -->
+<!--   }); -->
+  
+  <!-- </script> -->
+
+<ul>
+  <li>
+    <p>
+      <h1> <a href="/export-project"> Export project </a> </h1>
+    </p>
+
+    <p>Export project into a file that's loadable by the engine </p>
+  </li>
+
+  <li>
+    <p>
+      <h1> <a href="/export-headers" onclick="alert('disabled'); return false;"> Export headers </a></h1>
+    </p>
+    <p> Export project headers that contain sprite and map ids </p>
+  </li>
+</ul>

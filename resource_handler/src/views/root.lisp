@@ -1,7 +1,7 @@
 (defpackage linnarope.views.root
   (:use :cl)
   (:export :read-arrayed-form)
-  (:import-from :linnarope.middleware :list-all-js-resources :@db :@html :@css :deftab :defsubtab)
+  (:import-from :linnarope.middleware :defheaderbutton :list-all-js-resources :@db :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
   (:import-from :lisp-fixup :filename :with-output-to-real-string)
   (:local-nicknames (:palette-db :linnarope.db.palettes)))
@@ -10,7 +10,7 @@
 
 
 ;; nyt me teemme niin että:
-;; - sqlite ja cl- dbi helvettiin, possua ja postmodernia (ja halisql????) tilalle
+;; - sqlite ja cl- dbi helvettiin, possua ja postmodernia (ja halisql????) tilalle   :checked:
 ;; - tiedostoexporttaus ja -importtaus :zip illä (https://github.com/bluelisp/zip)
 ;; miten enginen pään lataus sitten toimii??????
 ;; - lyödään engineen ecl kiinni, otetaan :zipin ympärille tehdyt latauskoodit, paljastetaan ecl:lle tarpeeksi rajapintaa jolla (load-game-zip ...) voisi
@@ -26,7 +26,7 @@
 		 :justify-content "space-evenly"
 		 :list-style "none"
 		 :flex-direction "row")
-		(".topbar li"
+		(".topbar li.tab"
 		 :border-bottom "2px solid black")
 		(".topbar li.selected"
 		 :border-bottom "5px solid black")
@@ -54,6 +54,12 @@
 
 		(".file-browser li .file"
 		 :border-bottom "2px solid #ff5700")
+
+		;; directory browser css
+		(".directory-browser li .dir"
+		 :display "flex"
+		 :justify-content "space-between"
+		 :flex-direction "row")		 
 
 
 		;; current-map css
@@ -83,6 +89,8 @@
 		(button
 		 :display :block))))
 
+;;(defheaderbutton export-into-file "Export project into a file")
+
 (deftab (maps "/maps" "maps.html") 
     `((:maps . ,(postmodern:query 
 		 "SELECT id, tmx_path as name FROM map" :alists))))
@@ -94,7 +102,7 @@
 (defsubtab (new-palette "/new-palette" "new-palette.html" palettes :post) () (&post name)
   (assert name)
   `((:name . ,name)
-    (:js-files . ((:src . "palette-editor.js")))))
+    (:js-files . (((:src . "palette-editor.js"))))))
 
 (defun hex->color (hex)
   `((:color . ,hex)))
@@ -106,7 +114,7 @@
       `((:name . ,name)
 	(:palette-id . ,id)
 	(:colors . ,(mapcar #'hex->color (coerce colors 'list)))
-	(:js-files . ((:src . "palette-editor.js")))))))
+	(:js-files . (((:src . "palette-editor.js"))))))))
 
 (defun transform-obj (row)
   `((:name . ,(getf row :|name|))

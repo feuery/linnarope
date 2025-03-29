@@ -64,7 +64,8 @@
   tileheight,
   infinite,
   nextlayerid,
-  nextobjectid)
+  nextobjectid,
+  tmx_file)
 
  VALUES
 ( $1,
@@ -77,8 +78,9 @@
   $8,
   $9,
   $10,
-  $11) RETURNING ID"
-	 tmx-path
+  $11,
+  $12) RETURNING ID"
+	 (lisp-fixup:filename tmx-path)
 	 png-path
 	 (get-alist tmx-metadata "orientation")
 	 (get-alist tmx-metadata "renderorder")
@@ -88,7 +90,8 @@
 	 (get-alist tmx-metadata "tileheight" :expected-type :int)
 	 (get-alist tmx-metadata "infinite" :expected-type :sqlite-bool)
 	 (get-alist tmx-metadata "nextlayerid" :expected-type :int)
-	 (get-alist tmx-metadata "nextobjectid" :expected-type :int))))
+	 (get-alist tmx-metadata "nextobjectid" :expected-type :int)
+	 (lisp-fixup:slurp-bytes tmx-path))))
 
 (defun insert-layers ( map-id tmx-metadata)
   "Inserts map's :layers into the db and returns a list of maps of {layerid -> internal-id}"

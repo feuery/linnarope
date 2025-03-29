@@ -2,7 +2,7 @@
   (:use :cl)
   (:import-from :lisp-fixup :with-output-to-real-string)
   (:import-from :easy-routes :defroute)
-  (:export :list-all-js-resources :js-resource :defsubtab :deftab :tabs :@html :@db :*database-name*))
+  (:export :defheaderbutton :list-all-js-resources :js-resource :defsubtab :deftab :tabs :@html :@db :*database-name*))
 
 (in-package :linnarope.middleware)
 
@@ -28,7 +28,9 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar tabs (make-hash-table :test 'equal)
-    "A list of tabs, keyed by symbol and valued by their urls"))
+    "A list of tabs, keyed by symbol and valued by their urls")
+  (defvar buttons (make-hash-table :test 'equal)
+    "A list of header buttons"))
 
 (defun tabs-for-view (current-tab-url tabs)
   (mapcar (lambda (cell)
@@ -44,12 +46,21 @@
   "Expects next to return '((:a . alist) (:of . data)) that populates {{mustache-placeholders}} in /resources/html. :component is a key that specifies which template is chosen to be set up inside root.html"
   (let* ((component-data (funcall next))
 	 (component (alist-get component-data :component))
-	 (mustache:*escape-tokens* nil)    
-	 (populated-html (mustache:render* (html-resource "root.html") (cons
-									`(:tabs . ,(tabs-for-view current-tab-url tabs))
-									(cons
-									 (cons :component (mustache:render* (html-resource component) component-data))
-									 component-data)))))
+	 (mustache:*escape-tokens* nil)
+	 (js-files (cons `((:src . "root.js"))
+			 (alist-get component-data :js-files)))
+	 (params (concatenate 'list
+			      `((:js-files . ,js-files)
+				(:tabs . ,(tabs-for-view current-tab-url tabs))
+				(:buttons . ,(map 'list
+						  (lambda (cell)
+						    (destructuring-bind (id . body) cell
+						      `((:id . ,(str:downcase id))
+							(:body . ,body))))
+						  (alexandria:hash-table-alist buttons)))
+				(:component . ,(mustache:render* (html-resource component) component-data)))
+			      component-data))
+	 (populated-html (mustache:render* (html-resource "root.html") params )))
     (setf (hunchentoot:content-type*) "text/html")
     populated-html))
 
@@ -60,6 +71,11 @@
        (cons (cons :component ,component-filename)
 	     (progn
 	       ,@contents)))))
+
+(defmacro defheaderbutton (id-symbol body-text)
+  "(defheaderbutton btn-id \"Do Something fun!\") => generates a <button id=\"btn-id\">Do Something fun!</button> in the header"
+  (setf (gethash id-symbol buttons) body-text))
+      
 
 (defmacro defsubtab (varlist decorators http-varlist &rest contents)
   (destructuring-bind (route-symbol route-url component-filename parent-tab . _) varlist

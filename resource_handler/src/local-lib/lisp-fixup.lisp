@@ -2,6 +2,7 @@
 (defpackage lisp-fixup
   (:use :cl)
   (:export :partial
+	   :recursive-dir-files
 	   :range
 	   :filename
 	   :hashtable-merge
@@ -67,3 +68,17 @@
 		 (irange (1+ i) (cons i acc))
 		 acc)))
     (reverse (irange 0 nil))))
+
+(defun directory-exists? (dir)
+  (cl-fad:directory-exists-p (cl-fad:directory-pathname-p (cl-fad:pathname-as-directory (probe-file dir)))))
+
+(defun recursive-dir-files (dir)
+  "Returns recursively every file in `dir`"
+  (assert (directory-exists? dir))
+  (let ((acc nil))
+    (cl-fad:walk-directory dir (lambda (file)
+				 (push file acc))
+			   :test (complement #'directory-exists?))
+    acc))
+
+				 

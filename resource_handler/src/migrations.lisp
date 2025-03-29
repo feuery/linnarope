@@ -10,6 +10,7 @@
 
 (defun migrate ()
   (@db (lambda ()
+	 (format t "Running migrations")
 	 (exec "
 CREATE TABLE IF NOT EXISTS map
 ( ID SERIAL PRIMARY KEY,
@@ -23,7 +24,9 @@ CREATE TABLE IF NOT EXISTS map
   tileheight INTEGER NOT NULL,
   infinite BOOL NOT NULL,
   nextlayerid INTEGER NOT NULL,
-  nextobjectid INTEGER NOT NULL  
+  nextobjectid INTEGER NOT NULL,
+  -- the actual tmx file, you can't exactly reconstruct it with the minimal tables we have defined here.
+  tmx_file BYTEA NOT NULL
 )")
 	 (exec "
 CREATE TABLE IF NOT EXISTS layer

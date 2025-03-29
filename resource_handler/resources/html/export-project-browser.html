@@ -1,0 +1,49 @@
+<script>
+  window.addEventListener('DOMContentLoaded', _ => {
+      let btns = document.querySelectorAll('button.export');
+      for(let btn of btns) {
+	  btn.addEventListener('click', async function(e) {
+	      let source = e.target;
+	      let href = source.dataset.href;
+
+	      let resp = await fetch(href);
+
+	      if(resp.ok)
+		  alert(await resp.text());	      
+	  });
+      }
+  });
+</script>
+
+<div>
+  <h3>{{path}}</h3>
+  <p class="help"> Click either on a directory to move there or a export the project there </p>
+  <ul class="directory-browser file-browser">
+    {{#files}}
+    <li>
+      {{#dir}}
+      <p class="{{#up}}up-arrow {{/up}} dir">
+	{{#up}}
+	&DoubleUpArrow; UP
+	{{/up}}
+
+	{{^up}}
+	  {{file-path}}
+	{{/up}}
+
+	<a href="/export-project?path={{file-path}}">Move to</a>
+	{{^up}}
+	   <button class="export" data-href="/export-project-here?path={{file-path}}" >Export here</button>
+	{{/up}}
+      </p>
+      {{/dir}}
+
+      {{^dir}}
+          <p class="file"> {{file-path }} </p>
+      {{/dir}}
+    </li>
+    {{/files}}
+  </ul>
+
+  <p> Export project to <a href="/export-project-here?path={{path}}">{{path}}</a></p>
+</div>

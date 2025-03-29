@@ -10,11 +10,15 @@
 (defun start-server (&key (port 3010))
   (format t "Starting linnarope resource server~%")
   (let ((server (make-instance 'easy-routes:easy-routes-acceptor :port port)))
+    (format t "Server exists~%")
     (when (equalp 3010 port)
       (setf *server* server))
+    
     (hunchentoot:start server)
+    (format t "Hunchentoot:started server~%")
     
     (linnarope.migrations:migrate)
+    (format t "migrated~%")
     
     (format t "Started linnarope resource server on ~a ~%" port)
     server))

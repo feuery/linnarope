@@ -12,10 +12,16 @@
     <ul class="topbar">
       {{#tabs}}
       
-      <li class="{{#selected}}selected{{/selected}}">
+      <li class="{{#selected}}selected{{/selected}} tab">
 	<a href="{{url}}">{{name}}</a>
       </li>
       {{/tabs}}
+
+      {{#buttons}}
+      <li>
+	<button id="{{id}}">{{body}} </button>
+      </li>
+      {{/buttons}}
     </ul>    
 
     {{component}}
