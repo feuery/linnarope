@@ -14,3 +14,7 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 clean:
 	find . -name '*.o' -delete; \
 	rm finropedemo
+
+.PHONY: resource-manager
+resource-manager:
+	sbcl --load ./resource_handler/resource-handler.asd --eval '(asdf:make "linnarope-resource-handler")' --eval '(linnarope.main:start-server)'
