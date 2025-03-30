@@ -20,3 +20,6 @@ maps/*.tiled-session
 *.tmx.*.png
 /taysi_maailma.png
 /whole-map.resource-handler.png
+/resource_handler/exporter/exporter
+/resource_handler/exporter/ilpotestaa
+/resource_handler/exporter/.cache/
