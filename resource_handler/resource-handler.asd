@@ -26,8 +26,7 @@
   :components ((:module "src"
 		:components
 		((:module "local-lib"
-		  :components ((:file "lisp-fixup")
-			       (:file "export")))
+		  :components ((:file "lisp-fixup")))
 		 (:file "middleware")
 		 (:file "migrations")
 		 (:file "tmxreader")

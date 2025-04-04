@@ -49,117 +49,17 @@
 				  (:dir . ,(cl-fad:directory-pathname-p f))))
 			      (cl-fad:list-directory path)))))))
 
-(defun gen2d (h w)
-  (coerce 
-   (loop for y from 1 to  h
-	 collecting (coerce (loop 
-			      for x from 1 to w
-			      collecting 0)
-			    'vector))
-   'vector))
-
-
-
-  
+(defvar *exporter-bin-path* (pathname (format nil "~aexporter/exporter" (asdf:system-source-directory "linnarope-resource-handler"))))
 
 (defroute export-project-here ("/export-project-here" :method :get
 						      :decorators (@db))
     (&get path)
+  (assert (cl-fad:file-exists-p *exporter-bin-path*))
   (let* ((zipfile-name "linnarope-export.game")
-	 ;; TODO don't commit :D
-	 ;;(path #P"/Users/feuer/Projects/finrope/resource_handler/src/views")
-	 (final-path (pathname (format nil "~a/~a" path zipfile-name)))
-	 (temp-dir (pathname (format nil "~a/linnarope.tmp/" path)))
-	 (map-dir (pathname (format nil "~a/maps/" temp-dir)))
-	 (sprite-dir (pathname (format nil "~a/sprites/" temp-dir)))
-	 (lisp-sprite-dir (pathname (format nil "~a/lisp-sprites/" temp-dir)))
-	 (palettes-dir (pathname (format nil "~a/palettes/" temp-dir)))
-	 (warp-connections-dir (pathname (format nil "~a/warp-connections/" temp-dir)))
-	 
+	 (final-path (pathname (format nil "~a/~a" path zipfile-name))))
 
-	 (map-blobs (coerce (postmodern:query "SELECT tmx_path, tmx_file FROM map" :array-hash) 'list))
-	 (sprites (coerce (postmodern:query "SELECT name, data FROM sprite" :array-hash) 'list))
+    (format t "Running `~a ~a`~%" *exporter-bin-path* final-path)
 
+    (sb-ext:run-program *exporter-bin-path* (list (format nil "~a" final-path)))
 
-	 (palettes (map 'list
-			(lambda (r)
-			  (destructuring-bind (name colors) r
-			    (hash ("name" name)
-				  ("colors" (jzon:parse colors)))))
-			(postmodern:query "SELECT name, color_array FROM palette")))
-	 (lisp-sprites (map 'list
-			    (lambda (sprite)
-			      (with-keys ("id" "w" "h") sprite
-				(let* ((pixel-dst (gen2d h w))
-				       (pixel-data (postmodern:query "SELECT x, y, color_index FROM lisp_sprite_pixel WHERE sprite_id = $1" id))
-				       ;; (pixls (pixels-to-2d pixel-data))
-				       )
-				  (dolist (pixel-row pixel-data)
-				    (destructuring-bind (x y color-index) pixel-row
-					(setf (aref (aref pixel-dst y) x) color-index)))
-				  (format t "pixels: ~a~%" pixel-dst)
-				  
-				  (setf (gethash "pixels" sprite) pixel-dst)
-				  sprite)))
-				  
-			    (postmodern:query "SELECT * FROM lisp_sprite" :array-hash)))
-
-	 (warp-connections (coerce (postmodern:query "SELECT * FROM warp_connection" :array-hash) 'list))
-	 (all-dirs (list temp-dir map-dir sprite-dir lisp-sprite-dir palettes-dir warp-connections-dir)))
-				  
-    
-    (dolist (dir all-dirs)
-      (ensure-directories-exist dir))
-
-    (dolist (map-row map-blobs)
-      (with-keys ("tmx_path" "tmx_file") map-row 
-	(with-open-file (f (pathname (format nil "~a/~a" map-dir tmx_path)) :if-exists :overwrite
-									    :element-type '(unsigned-byte 8)
-									    :direction :output
-									    :if-does-not-exist :create)
-	  (write-sequence tmx_file f))))
-
-    (dolist (sprite-row sprites)
-      (with-keys ("name" "data") sprite-row 
-	(with-open-file (f (pathname (format nil "~a/~a" sprite-dir name)) :if-exists :overwrite
-									    :element-type '(unsigned-byte 8)
-									    :direction :output
-									    :if-does-not-exist :create)
-	  (write-sequence data f))))
-
-    (dolist (lisp-sprite lisp-sprites)
-      (with-keys ("name") lisp-sprite
-	(assert name)
-	(with-open-file (f (pathname (format nil "~a/~a.json" lisp-sprite-dir name))
-			   :if-exists :overwrite
-			   :direction :output
-			   :if-does-not-exist :create)
-	  (write-string (jzon:stringify lisp-sprite) f))))
-
-    (dolist (palette palettes)
-      (with-keys ("name") palette
-	(assert name)
-	(with-open-file (f (pathname (format nil "~a/~a.json" palettes-dir name))
-			   :if-exists :overwrite
-			   :direction :output
-			   :if-does-not-exist :create)
-	  (write-string (jzon:stringify palette) f))))
-
-    (dolist (wc warp-connections)
-      (with-keys ("internal_id") wc
-	(assert internal_id)
-	(with-open-file (f (pathname (format nil "~a/~a.json" warp-connections-dir internal_id))
-			   :if-exists :overwrite
-			   :direction :output
-			   :if-does-not-exist :create)
-	  (write-string (jzon:stringify wc) f))))
-
-    (let ((files (lisp-fixup:recursive-dir-files temp-dir)))
-      (format t "Files: ~a~%" files))
-
-    (format t "Removing ~a recursively~%" temp-dir)
-    ;;(cl-fad:delete-directory-and-files temp-dir)
-
-    ;; sen jälkeen zippaa temp-dir $path/$zipfile-name:en ja poista temp-dir 
-
-    (format nil "Files should now exist in ~a" temp-dir)))
+    (format nil "Game package should now exist in ~a" final-path)))

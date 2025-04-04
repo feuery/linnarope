@@ -8,16 +8,6 @@
 
 (in-package :linnarope.views.root)
 
-
-;; nyt me teemme niin että:
-;; - sqlite ja cl- dbi helvettiin, possua ja postmodernia (ja halisql????) tilalle   :checked:
-;; - tiedostoexporttaus ja -importtaus :zip illä (https://github.com/bluelisp/zip)
-;; miten enginen pään lataus sitten toimii??????
-;; - lyödään engineen ecl kiinni, otetaan :zipin ympärille tehdyt latauskoodit, paljastetaan ecl:lle tarpeeksi rajapintaa jolla (load-game-zip ...) voisi
-;;   lispinä ladata zipin ja räpeltää enginen tilaa. Miten kuvat siirretään #(taulukosta) SDL_Surfaceiksi? Lolemt, mutta https://wiki.libsdl.org/SDL2_image/IMG_Load_RW
-;;   ja https://wiki.libsdl.org/SDL2/SDL_RWFromConstMem voivat olla avuksi
-
-
 (defroute css ("/css" :method :get :decorators (@css)) ()
   (cl-css:css `((body
 		 :background-color "#fff")
