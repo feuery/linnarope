@@ -2,6 +2,8 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <sqlite3.h>
+#include <map.h>
+#include <sprites.h>
 
 // postgresql://[userspec@][hostspec][/dbname][?paramspec]
 
@@ -31,7 +33,8 @@ std::vector<std::string> ddls = {"CREATE TABLE IF NOT EXISTS map \
   tileheight INTEGER NOT NULL, \
   infinite BOOL NOT NULL, \
   nextlayerid INTEGER NOT NULL, \
-  nextobjectid INTEGER NOT NULL   \
+  nextobjectid INTEGER NOT NULL,   \
+  tmx_file BLOB NOT NULL \
   )", 
 				 "CREATE TABLE IF NOT EXISTS layer \
 ( internal_id INTEGER PRIMARY KEY AUTOINCREMENT, \
@@ -62,11 +65,13 @@ std::vector<std::string> ddls = {"CREATE TABLE IF NOT EXISTS map \
   src_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE, \
   src_warpzone INT NOT NULL UNIQUE REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE, \
   dst_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE, \
-  dst_warpzone INT NOT NULL REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE)", 
+  dst_warpzone INT NOT NULL REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE)",
+				 // TODO jatka 
 				 "\
 	 CREATE TABLE IF NOT EXISTS sprite \
 (  internal_id INTEGER PRIMARY KEY AUTOINCREMENT, \
-   png_path TEXT NOT NULL \
+   name TEXT NOT NULL, \
+   data BLOB NOT NULL \
 )", 
 				 "CREATE TABLE IF NOT EXISTS palette \
 (  ID INTEGER PRIMARY KEY AUTOINCREMENT, \
@@ -128,16 +133,14 @@ int main(int argc, char **argv) {
   
   pqxx::connection c(connString);
   pqxx::work w{c};
-  for(auto [id, tmx_path, png_path, orientation, renderorder]: w.query<int, std::string,std::string,std::string,std::string>("SELECT id, tmx_path, png_path, orientation, renderorder FROM map")) {
-    printf("Map data: %d, %s, %s, %s, %s\n ", id, tmx_path.c_str(), png_path.c_str(), orientation.c_str(), renderorder.c_str());
-  }
 
   for(auto ddl: ddls) {
     exec_ddl(db, ddl.c_str());
   }
 
-  puts("Done all the tables\n");
-  puts("sqlite-kannan pitäisi olla nyt olemassa?");
+  export_maps(w, db);
+  export_sprites(w, db);
+  export_lisp_sprites(w, db);
 
   sqlite3_close(db);
   
