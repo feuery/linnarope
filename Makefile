@@ -15,6 +15,13 @@ clean:
 	find . -name '*.o' -delete; \
 	rm finropedemo
 
+# resource manager specific tasks
+
+.PHONY: exporter
+exporter:
+	$(MAKE) -C ./resource_handler/exporter
+
+## runs resource manager
 .PHONY: resource-manager
-resource-manager:
+resource-manager: exporter
 	sbcl --load ./resource_handler/resource-handler.asd --eval '(asdf:make "linnarope-resource-handler")' --eval '(linnarope.main:start-server)'
