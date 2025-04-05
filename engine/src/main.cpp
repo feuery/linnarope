@@ -11,15 +11,7 @@
 #include <getopt.h>
 #include <SDL_image.h>
 #include <sqlite3.h>
-
-#define DEFUN(name,fun,args) \
-    ecl_def_c_function(c_string_to_object(name), \
-                      (cl_objectfn_fixed)fun, \
-                      args)
-
-cl_object ecl_call(const char *call) {
-  return cl_safe_eval(c_string_to_object(call), Cnil, Cnil);
-}
+#include "swank.h"
 
 struct cli_result {
   std::string map_path;
@@ -166,11 +158,8 @@ int main (int argc, char **argv) {
 
   cl_boot(argc, argv);
   atexit(cl_shutdown);
+  start_swank();
   
-  puts("Trying an ecl call\n");
-  ecl_call("(format t \"Hello from ecl ~@r~%\" 12)");
-  return 1;
-
   auto cliresult = handle_cli(argc, argv);
 
   if(cliresult.process()) {
