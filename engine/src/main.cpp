@@ -172,19 +172,19 @@ int main (int argc, char **argv) {
 
   auto *renderer = createRenderer(window);
   assert(renderer); 
-  Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-toolon tulli.tmx",
-		      "/Users/feuer/Projects/finrope/resource_handler/resources.db");
+  // Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-toolon tulli.tmx",
+  // 		      "/Users/feuer/Projects/finrope/resource_handler/resources.db");
   puts("Read the whole stadi!");
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-  render_map(map, renderer);
+  // render_map(map, renderer);
 
   bool exit = false;
   SDL_Event eventData;
   while (!exit) {
     SDL_RenderClear(renderer);
 
-    render_map(map, renderer);      
+    // render_map(map, renderer);      
     SDL_RenderPresent(renderer);
        
     while (SDL_PollEvent(&eventData)) {
@@ -196,7 +196,7 @@ int main (int argc, char **argv) {
     }
   }
 
-  delete_map(map);
+  // delete_map(map);
 
   // Destroy the render, window and finalise SDL
   SDL_DestroyRenderer(renderer);
