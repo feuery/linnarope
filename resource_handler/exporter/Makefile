@@ -7,7 +7,7 @@ exporter : $(OBJECTS)
 	clang++ $(OBJECTS) -o exporter $$(pkg-config --libs sqlite3) $$(pkg-config --libs libpqxx) $$(pkg-config libpq --libs)
 
 $(OBJECTS): %.o: src/%.cpp $(HEADERS)
-	clang++ $< -Wall -Werror -std=c++20 -g -O0 -c -Iheaders -I/usr/local/include $$(pkg-config --cflags libpqxx)
+	clang++ $< -Wall -Werror -Wno-deprecated-declarations -std=c++20 -g -O0 -c -Iheaders -I/usr/local/include $$(pkg-config --cflags libpqxx)
 
 .PHONY: clean
 clean:

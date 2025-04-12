@@ -1,5 +1,7 @@
 #include <vector>
 #include <map.h>
+#include <map_import.h>
+#include <sprite_import.h>
 #include <sprites.h>
 #include <pqxx/pqxx>
 #include <sqlite3.h>
@@ -96,14 +98,9 @@ std::vector<std::string> ddls = {"CREATE TABLE IF NOT EXISTS map \
   y INTEGER NOT NULL, \
   color_index INT NOT NULL DEFAULT 0)"};
 
-void Importer::do_it(std::string &psql_connstring, std::string sqlite_path) {
-  puts("Importer::do_it\n");
-}
-
 void Exporter::do_it(std::string &psql_connstring, std::string dst_sqlite_path) {
   sqlite3 *db;
-  sqlite3_open(dst_sqlite_path.c_str(), &db);
-  
+  sqlite3_open(dst_sqlite_path.c_str(), &db);  
   
   pqxx::connection c(psql_connstring);
   pqxx::work w{c};
@@ -120,3 +117,23 @@ void Exporter::do_it(std::string &psql_connstring, std::string dst_sqlite_path) 
 }
 
 App::~App() { }
+
+
+void Importer::do_it(std::string &psql_connstring, std::string sqlite_path) {
+  printf("Importing sqlite %s into psql %s\n", sqlite_path.c_str(), psql_connstring.c_str());
+
+  sqlite3 *db;
+  sqlite3_open(sqlite_path.c_str(), &db);  
+  
+  pqxx::connection c(psql_connstring);
+  pqxx::work w{c};
+
+  if(import_maps(w, db) && 
+     import_sprites(w, db) && 
+     import_lisp_sprites(w, db)) {
+    w.commit();
+  }
+  else w.abort();
+
+  sqlite3_close(db);
+}
