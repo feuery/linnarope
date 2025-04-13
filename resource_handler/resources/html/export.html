@@ -1,21 +1,11 @@
-<!-- <script> -->
-
-<!--   window.addEventListener('DOMContentLoaded', _ => { -->
-<!--       let btn = document.querySelector('#export'); -->
-<!--       btn.addEventListener('click', async function (_) { -->
-<!-- 	  let resp = await fetch(`/export`, {method: 'POST'}); -->
-<!-- 	  let txt = await resp.text(); -->
-	  
-<!-- 	  if(!resp.ok) {     -->
-<!-- 	      alert(`Export failed due to ${resp.status} ${txt}`); -->
-<!-- 	      return; -->
-<!-- 	  } -->
-
-<!-- 	  alert (txt); -->
-<!--       });					      -->
-<!--   }); -->
-  
-  <!-- </script> -->
+<script>
+  window.addEventListener('DOMContentLoaded', _ => {
+      document.querySelector('#import').addEventListener('click', e => {
+	  if(!window.confirm('This overwrites anything not exported. Are you sure you want to import a project file?'))
+	      e.preventDefault();
+      });
+  });
+</script>
 
 <ul>
   <li>
@@ -28,8 +18,9 @@
 
   <li>
     <p>
-      <h1> <a href="/export-headers" onclick="alert('disabled'); return false;"> Export headers </a></h1>
+      <h1> <a id="import" href="/import-project"> Import project </a> </h1>
     </p>
-    <p> Export project headers that contain sprite and map ids </p>
+
+    <p>Remove everything not exported in the current project and load another project</p>
   </li>
 </ul>

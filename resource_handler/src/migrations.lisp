@@ -1,17 +1,24 @@
 (defpackage linnarope.migrations
   (:use :cl)
   (:import-from :linnarope.middleware :@html :@db)
-  (:export :migrate))
+  (:export :migrate :*tables*))
 
 (in-package :linnarope.migrations)
 
 (defun exec (str)
   (postmodern:execute str))
 
+(defvar *tables* nil)
+
+(defun create-table (name ddl)
+  (exec ddl)
+  (unless (member name *tables* :test 'equal)
+    (push name *tables*)))
+
 (defun migrate ()
   (@db (lambda ()
 	 (format t "Running migrations")
-	 (exec "
+	 (create-table "map" "
 CREATE TABLE IF NOT EXISTS map
 ( ID SERIAL PRIMARY KEY,
   tmx_path TEXT UNIQUE,
@@ -28,7 +35,7 @@ CREATE TABLE IF NOT EXISTS map
   -- the actual tmx file, you can't exactly reconstruct it with the minimal tables we have defined here.
   tmx_file BYTEA NOT NULL
 )")
-	 (exec "
+	 (create-table "layer" "
 CREATE TABLE IF NOT EXISTS layer
 ( internal_id SERIAL PRIMARY KEY,
   ID INTEGER NOT NULL,
@@ -37,14 +44,14 @@ CREATE TABLE IF NOT EXISTS layer
   height INTEGER NOT NULL,
   map_id INTEGER NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE
 )")
-	 (exec "
+	 (create-table "objectgroup" "
 CREATE TABLE IF NOT EXISTS objectgroup
 ( internal_id SERIAL PRIMARY KEY,
   ID INTEGER,
   name TEXT NOT NULL,
   map_id INTEGER NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE)")
 
-	 (exec "
+	 (create-table "object" "
 CREATE TABLE IF NOT EXISTS object
 ( internal_id SERIAL PRIMARY KEY,
   id TEXT NOT NULL,
@@ -56,7 +63,7 @@ CREATE TABLE IF NOT EXISTS object
   group_id INTEGER NOT NULL REFERENCES objectgroup(internal_id) ON UPDATE CASCADE ON DELETE CASCADE,
   warp_zone BOOLEAN NOT NULL)
 ")
-	 (exec "
+	 (create-table "warp_connection" "
 CREATE TABLE IF NOT EXISTS warp_connection
 ( internal_id SERIAL PRIMARY KEY,
   src_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -64,21 +71,21 @@ CREATE TABLE IF NOT EXISTS warp_connection
   dst_map INT NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
   dst_warpzone INT NOT NULL REFERENCES object(internal_id) ON UPDATE CASCADE ON DELETE CASCADE)")
 
-	 (exec "
+	 (create-table "sprite" "
 CREATE TABLE IF NOT EXISTS sprite
 (  internal_id SERIAL PRIMARY KEY,
    name TEXT NOT NULL,
    data BYTEA NOT NULL
    -- no references anywhere as these are expected to just be magic handles one can reference in the c++ code, and are thus not bound to a single map
 );")
-	 (exec
-	  "CREATE TABLE IF NOT EXISTS palette
+	 (create-table
+	  "palette" "CREATE TABLE IF NOT EXISTS palette
 (  ID SERIAL PRIMARY KEY,
    name TEXT UNIQUE NOT NULL,
    color_array JSONB NOT NULL)")
 	 
-	 (exec
-	  "CREATE TABLE IF NOT EXISTS lisp_sprite
+	 (create-table
+	  "lisp_sprite" "CREATE TABLE IF NOT EXISTS lisp_sprite
 ( ID SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   w INT NOT NULL CHECK (w > 0),
@@ -91,7 +98,7 @@ CREATE TABLE IF NOT EXISTS sprite
   -- we'll see if thiqs table should be made into view that pulls the hex-color straight from the palette table
 )")
 
-	 (exec "CREATE TABLE IF NOT EXISTS lisp_sprite_pixel
+	 (create-table "lisp_sprite_pixel" "CREATE TABLE IF NOT EXISTS lisp_sprite_pixel
 ( ID SERIAL PRIMARY KEY,
   sprite_id INT NOT NULL REFERENCES lisp_sprite(ID) ON DELETE CASCADE ON UPDATE CASCADE,
   x INTEGER NOT NULL,

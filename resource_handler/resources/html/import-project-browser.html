@@ -1,0 +1,49 @@
+<script>
+  window.addEventListener('DOMContentLoaded', _ => {
+      let btns = document.querySelectorAll('button.import');
+      for(let btn of btns) {
+	  btn.addEventListener('click', async function(e) {
+	      let source = e.target;
+	      let href = source.dataset.href;
+
+	      let resp = await fetch(href);
+
+	      if(resp.ok)
+		  alert(await resp.text());	      
+	  });
+      }
+  });
+</script>
+
+<div>
+  <h3>{{path}}</h3>
+  <p class="help"> Click either on a directory to move there or a import the project there </p>
+  <ul class="directory-browser file-browser">
+    {{#files}}
+    <li>
+      {{#dir}}
+      <a href="/import-project?path={{file-path}}" class="{{#up}}up-arrow {{/up}} dir">
+	{{#up}}
+	&DoubleUpArrow; UP
+	{{/up}}
+
+	{{^up}}
+	  {{file-path}}
+	{{/up}}
+      </a>
+      {{/dir}}
+
+      {{^dir}}
+        {{#game?}}
+          <p class="file dir tmx"> {{file-path}} <button data-href="/import-this-project?game-file={{file-path}}" class="import"> Import </button> </p>
+	{{/game?}}
+	{{^game?}}
+          <p class="file"> {{file-path }} </p>
+	{{/game?}}
+      {{/dir}}
+    </li>
+    {{/files}}
+  </ul>
+
+  <p> Import project to <a href="/import-project-here?path={{path}}">{{path}}</a></p>
+</div>
