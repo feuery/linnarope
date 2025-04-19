@@ -19,7 +19,7 @@
   (@db (lambda ()
 	 (format t "Running migrations")
 	 (create-table "map" "
-CREATE TABLE IF NOT EXISTS map
+CREATE TABLE IF NOT EXIsts map
 ( ID SERIAL PRIMARY KEY,
   tmx_path TEXT UNIQUE,
   png_path TEXT UNIQUE,
@@ -35,6 +35,18 @@ CREATE TABLE IF NOT EXISTS map
   -- the actual tmx file, you can't exactly reconstruct it with the minimal tables we have defined here.
   tmx_file BYTEA NOT NULL
 )")
+	 (create-table "tileset"
+		       "
+CREATE TABLE IF NOT EXISTS tileset
+(  --maps refer to tilesets by filename.tsx without parent directories
+   filename TEXT PRIMARY KEY,
+   tsx_contents BYTEA NOT NULL)")
+	 (create-table "map_to_tileset"
+		 "
+CREATE TABLE IF NOT EXISTS map_to_tileset
+( ID SERIAL PRIMARY KEY,
+  map_id INTEGER NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
+  tileset_filename TEXT NOT NULL REFERENCES tileset(filename) ON UPDATE CASCADE ON DELETE CASCADE)")
 	 (create-table "layer" "
 CREATE TABLE IF NOT EXISTS layer
 ( internal_id SERIAL PRIMARY KEY,

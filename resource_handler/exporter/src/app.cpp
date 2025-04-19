@@ -39,7 +39,17 @@ std::vector<std::string> ddls = {"CREATE TABLE IF NOT EXISTS map \
   nextlayerid INTEGER NOT NULL, \
   nextobjectid INTEGER NOT NULL,   \
   tmx_file BLOB NOT NULL \
-  )", 
+  )",
+				 R"(
+CREATE TABLE IF NOT EXISTS tileset
+(  --maps refer to tilesets by filename.tsx without parent directories
+   filename TEXT PRIMARY KEY,
+   tsx_contents BYTEA NOT NULL))",
+				 R"(
+CREATE TABLE IF NOT EXISTS map_to_tileset
+( ID SERIAL PRIMARY KEY,
+  map_id INTEGER NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
+  tileset_filename TEXT NOT NULL REFERENCES tileset(filename) ON UPDATE CASCADE ON DELETE CASCADE))",
 				 "CREATE TABLE IF NOT EXISTS layer \
 ( internal_id INTEGER PRIMARY KEY AUTOINCREMENT, \
   ID INTEGER NOT NULL, \

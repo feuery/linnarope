@@ -149,13 +149,21 @@ VALUES
 					   objs))))
 
       (values group-mapping object-mapping))))
-		 
+
+(defun insert-tilesets (tmx-metadata map-id)
+  (let ((tsets (get-alist tmx-metadata :tilesets)))
+    (dolist (tileset-path tsets)
+      (let ((filename (lisp-fixup:filename tileset-path))
+	    (bytes (lisp-fixup:slurp-bytes tileset-path)))
+	(postmodern:execute "INSERT INTO tileset (filename, tsx_contents) VALUES ($1, $2) ON CONFLICT DO NOTHING" filename bytes)
+	(postmodern:execute "INSERT INTO map_to_tileset (map_id, tileset_filename) VALUES ($1, $2)" map-id filename)))))
 	   
 (defun save-map-to-db! ( tmx-path)
   (let* ((png-path (generate-png-filename tmx-path))
 	 (tmx-metadata (read-tmx tmx-path))
 	 (map-id (insert-map-get-id  tmx-path png-path tmx-metadata))
 	 (layer-mapping (insert-layers  map-id tmx-metadata)))
+    (insert-tilesets tmx-metadata map-id)
     (multiple-value-bind (group-mapping object-mapping) (insert-objects-and-groups  map-id tmx-metadata)
       (generate-png tmx-path)
       (format t "Inserted ~d layers, ~d groups and ~d objects ~%"

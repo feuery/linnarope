@@ -1,3 +1,4 @@
+#include "map_import.h"
 #include <map.h>
 
 #define text std::string
@@ -136,6 +137,58 @@ bool export_layers(pqxx::work &tx, sqlite3 *db) {
   return true;
 }
 
+bool export_tilesets(pqxx::work &tx, sqlite3 *db)
+{
+  for (auto [filename, data]: tx.query<std::string, pqxx::bytes>("SELECT filename, tsx_contents FROM tileset")) {
+    sqlite3_stmt *stmt;
+    std::string insert_q = "INSERT INTO tileset(filename, tsx_contents) VALUES (?, ?)";
+
+    int prepared = sqlite3_prepare_v2(db, insert_q.c_str(), insert_q.length(), &stmt, nullptr);
+
+    if (prepared != SQLITE_OK) {
+      printf("Export tilesets failed at the tileset stage %s\n", sqlite3_errmsg(db));
+      return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
+    sqlite3_bind_blob(stmt, 2, data.data(), data.size(), SQLITE_STATIC);
+
+    if(sqlite3_step(stmt) == SQLITE_ERROR) {
+      printf("failed the actual insertion of tileset: %s\n", sqlite3_errmsg(db));
+      return false;
+    }
+
+    sqlite3_finalize(stmt);
+  }
+
+
+  // the many-2-many table 
+  for (auto [id, map_id, tileset_filename]:
+	 tx.query<int, int, std::string>("SELECT id, map_id, tileset_filename FROM map_to_tileset")) {
+    sqlite3_stmt *stmt;
+    std::string insert_q = "INSERT INTO map_to_tileset(id, map_id, tileset_filename) VALUES (?, ?, ?)";
+
+    int prepared = sqlite3_prepare_v2(db, insert_q.c_str(), insert_q.length(), &stmt, nullptr);
+
+    if (prepared != SQLITE_OK) {
+      printf("Export tilesets failed at the map_to_tileset stage %s\n", sqlite3_errmsg(db));
+      return false;
+    }
+
+    sqlite3_bind_int(stmt, 1, id);
+    sqlite3_bind_int(stmt, 2, map_id);
+    sqlite3_bind_text(stmt, 3, tileset_filename.c_str(), tileset_filename.size(), SQLITE_STATIC);
+
+    if(sqlite3_step(stmt) == SQLITE_ERROR) {
+      printf("failed the actual insertion of map_to_tileset: %s\n", sqlite3_errmsg(db));
+      return false;
+    }
+    sqlite3_finalize(stmt);
+  }
+
+  return true;
+}
+
 bool export_maps(pqxx::work &tx, sqlite3 *db) {
   for(auto [id, tmx_path, png_path, orientation, renderorder, width, height, tilewidth, tileheight, infinite, nextlayerid, nextobjectid, tmx_file]:
 	tx.query<int, std::string,  std::string, std::string, std::string,
@@ -175,5 +228,5 @@ bool export_maps(pqxx::work &tx, sqlite3 *db) {
     
     sqlite3_finalize(stmt);
   }
-  return export_layers(tx, db) && export_objectgroups(tx, db) && export_objects(tx, db) && export_warp_connections(tx, db);
+  return export_layers(tx, db) && export_objectgroups(tx, db) && export_objects(tx, db) && export_warp_connections(tx, db) && export_tilesets(tx, db);
 }

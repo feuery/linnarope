@@ -169,7 +169,75 @@ bool import_layers(pqxx::work &tx, sqlite3 *db) {
 
   sqlite3_finalize(stmt);
   puts("import_layers done\n");
-  return true;  
+  return true;
+}
+
+bool import_tilesets (pqxx::work &tx, sqlite3 *db) {
+  sqlite3_stmt *stmt;
+
+  // tileset 
+  std::string q_all_tilesets = "SELECT filename, tsx_contents FROM tileset";
+
+  int prepared = sqlite3_prepare_v2(db, q_all_tilesets.c_str(), q_all_tilesets.size(), &stmt, nullptr);
+
+  if(prepared == SQLITE_ERROR) {
+    printf("import_tilesets failed %s\n", sqlite3_errmsg(db));
+    return false;
+  }
+
+  int step_result = SQLITE_ERROR;
+  while ((step_result = sqlite3_step(stmt)) == SQLITE_ERROR) {
+    std::string psql_insert = R"(
+INSERT INTO tileset (filename, tsx_contents)
+VALUES ($1, $2))";
+
+    std::string filename = (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+    const char *tsx_file = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, 2));
+    int size = sqlite3_column_bytes(stmt, 2);
+    std::string f;
+
+    f.assign(tsx_file, size);
+
+    pqxx::params p;
+    p.append(filename);
+    p.append(f);
+
+    tx.exec(psql_insert, p);
+  }
+
+  sqlite3_finalize(stmt);
+
+  // map_to_tileset
+  std::string q_all_tileset_links = "SELECT id, map_id, tileset_filename FROM map_to_tileset";
+
+  prepared = sqlite3_prepare_v2(db, q_all_tileset_links.c_str(), q_all_tileset_links.size(), &stmt, nullptr);
+
+  if(prepared == SQLITE_ERROR) {
+    printf("import_tilesets failed with map-links %s\n", sqlite3_errmsg(db));
+    return false;
+  }
+
+  step_result = SQLITE_ERROR;
+  while ((step_result = sqlite3_step(stmt)) == SQLITE_ERROR) {
+    std::string psql_insert = R"(
+INSERT INTO map_to_tileset (id, map_id, tileset_filename)
+VALUES ($1, $2, $3))";
+
+    int id = sqlite3_column_int(stmt, 0),
+      map_id = sqlite3_column_int(stmt, 1);
+    std::string filename = (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+
+    pqxx::params p;
+    p.append(id);
+    p.append(map_id);
+    p.append(filename);
+
+    tx.exec(psql_insert, p);
+  }
+
+  sqlite3_finalize(stmt);
+  
+  return true;
 }
 
 bool import_maps(pqxx::work &tx, sqlite3 *db) {  
@@ -241,5 +309,5 @@ bool import_maps(pqxx::work &tx, sqlite3 *db) {
   puts("Maps done\n");
 
   sqlite3_finalize(stmt);
-  return import_layers(tx, db) && import_objectgroups(tx, db) && import_objects(tx, db) && import_warp_connections(tx, db);
+  return import_layers(tx, db) && import_objectgroups(tx, db) && import_objects(tx, db) && import_warp_connections(tx, db) && import_tilesets(tx, db);
 }
