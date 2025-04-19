@@ -30,6 +30,7 @@
 		 (:file "middleware")
 		 (:file "migrations")
 		 (:file "tmxreader")
+		 (:file "tsxreader")
 		 (:module "db"
 		  :components ((:file "maps")
 			       (:file "sprites")

@@ -47,6 +47,10 @@ CREATE TABLE IF NOT EXISTS map_to_tileset
 ( ID SERIAL PRIMARY KEY,
   map_id INTEGER NOT NULL REFERENCES map(ID) ON UPDATE CASCADE ON DELETE CASCADE,
   tileset_filename TEXT NOT NULL REFERENCES tileset(filename) ON UPDATE CASCADE ON DELETE CASCADE)")
+	 (create-table "image_file"
+"CREATE TABLE IF NOT EXISTS image_file
+( filename TEXT NOT NULL,
+  img BYTEA NOT NULL)")	 
 	 (create-table "layer" "
 CREATE TABLE IF NOT EXISTS layer
 ( internal_id SERIAL PRIMARY KEY,

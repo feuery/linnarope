@@ -172,6 +172,38 @@ bool import_layers(pqxx::work &tx, sqlite3 *db) {
   return true;
 }
 
+bool import_images (pqxx::work &tx, sqlite3 *db) {
+  sqlite3_stmt *stmt;
+  std::string q_all = "SELECT filename, img FROM image_file";
+
+  int prepd = sqlite3_prepare_v2(db, q_all.c_str(), q_all.size(), &stmt, nullptr);
+
+  if (prepd == SQLITE_ERROR) {
+    printf("Import image_files failed due to %s\n", sqlite3_errmsg(db));
+    return false;
+  }
+
+  int step;
+  while((step = sqlite3_step(stmt)) == SQLITE_ROW) {
+    std::string psql_insert = R"(
+INSERT INTO image_file (filename, img)
+VALUES ($1, $2))";
+    std::string filename = (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+    const char *file_data = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, 2));
+    int size = sqlite3_column_bytes(stmt, 2);
+    std::string f;
+    f.assign(file_data, size);
+
+    pqxx::params p;
+    p.append(filename);
+    p.append(f);
+
+    tx.exec(psql_insert, p);
+  }
+
+  return true;
+}
+
 bool import_tilesets (pqxx::work &tx, sqlite3 *db) {
   sqlite3_stmt *stmt;
 
@@ -186,7 +218,7 @@ bool import_tilesets (pqxx::work &tx, sqlite3 *db) {
   }
 
   int step_result = SQLITE_ERROR;
-  while ((step_result = sqlite3_step(stmt)) == SQLITE_ERROR) {
+  while ((step_result = sqlite3_step(stmt)) == SQLITE_ROW) {
     std::string psql_insert = R"(
 INSERT INTO tileset (filename, tsx_contents)
 VALUES ($1, $2))";
@@ -237,7 +269,7 @@ VALUES ($1, $2, $3))";
 
   sqlite3_finalize(stmt);
   
-  return true;
+  return import_images(tx, db);
 }
 
 bool import_maps(pqxx::work &tx, sqlite3 *db) {  

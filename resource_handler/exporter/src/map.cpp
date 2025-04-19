@@ -1,5 +1,6 @@
 #include "map_import.h"
 #include <map.h>
+#include <string>
 
 #define text std::string
 
@@ -137,6 +138,31 @@ bool export_layers(pqxx::work &tx, sqlite3 *db) {
   return true;
 }
 
+bool export_images(pqxx::work &tx, sqlite3 *db) {
+  for(auto [filename, img]: tx.query<std::string, pqxx::bytes>("SELECT filename, img FROM image_file")) {
+    sqlite3_stmt *stmt;
+    std::string insert = "INSERT INTO image_file (filename, img) VALUES(?, ?)";
+    int prepd = sqlite3_prepare_v2(db, insert.c_str(), insert.size(), &stmt, nullptr);
+
+    if(prepd != SQLITE_OK) {
+      printf("Export images failed (1) %s\n", sqlite3_errmsg(db));
+      return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
+    sqlite3_bind_blob(stmt, 2, img.data(), img.size(), SQLITE_STATIC);
+
+    if(sqlite3_step(stmt) == SQLITE_ERROR) {
+      printf("Export images failed %s\n", sqlite3_errmsg(db));
+      return false;
+    }
+
+    sqlite3_finalize(stmt);
+    
+  }
+  return true;
+}
+
 bool export_tilesets(pqxx::work &tx, sqlite3 *db)
 {
   for (auto [filename, data]: tx.query<std::string, pqxx::bytes>("SELECT filename, tsx_contents FROM tileset")) {
@@ -186,7 +212,7 @@ bool export_tilesets(pqxx::work &tx, sqlite3 *db)
     sqlite3_finalize(stmt);
   }
 
-  return true;
+  return export_images(tx, db);
 }
 
 bool export_maps(pqxx::work &tx, sqlite3 *db) {
