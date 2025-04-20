@@ -1,18 +1,15 @@
 #include <cassert>
 #include <cmath>
-#include <unordered_map>
 #include <cstring>
 #include <pugixml.hpp>
 #include <cstdio>
 #include <string>
+#include <variant>
 #include <vector>
 #include <SDL.h>
 #include <SDL_image.h>
 #include "tmxreader.h"
-#include "SDL_render.h"
-#include "SDL_surface.h"
 #include "tmx_private.h"
-#include <libgen.h>
 #include <sqlite3.h>
 
 Tile::Tile(const Tile &t) {
@@ -148,13 +145,42 @@ SDL_Surface* Tileset::tileAt(int local_id) {
   return linear_tile_surfaces.at(local_id);
 }
 
-void Tileset::load_source(std::string basepath) {
+std::tuple<int, const void*> Tileset::load_img_binary(sqlite3* db, std::string &image_filename) {
+  sqlite3_stmt *stmt;
+  std::string q = "SELECT img FROM image_file WHERE filename = ?";
+  int result = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+  assert(result == SQLITE_OK);
+
+  sqlite3_bind_text(stmt, 1, image_filename.c_str(), image_filename.size(), SQLITE_STATIC);
+  result = sqlite3_step(stmt);
+  assert (result == SQLITE_ROW);
+
+  const void* blob = sqlite3_column_blob(stmt, 0);
+  int _sizeof = sqlite3_column_bytes(stmt, 0);
+
+  assert(_sizeof > 0);
+
+  sqlite3_finalize(stmt);
+
+  return {_sizeof, blob};
+}
+
+void* cpy (const void* ptr, int size) {
+  unsigned char *bfr = new unsigned char[size];
+
+  for(int i=0; i < size; i++) {
+    (*(bfr + i)) = (*(reinterpret_cast<const unsigned char*>(ptr) + i));
+  }
+
+  return bfr;
+}
+
+void Tileset::load_source(sqlite3 *db, std::string &document) {
   pugi::xml_document tsx;
-  auto tsx_path = basepath + "/" + source;
-  auto result = tsx.load_file(tsx_path.c_str());
+  auto result = tsx.load_string(document.c_str());
 
   if(! result) {
-    printf("Loading a tileset source from %s failed \n", tsx_path.c_str());
+    printf("Loading a tileset source from \"%s\" failed \n", document.c_str());
     throw "";
   }
 
@@ -167,14 +193,35 @@ void Tileset::load_source(std::string basepath) {
 
   auto image_el = tileset_el.child("image");
     
-  std::string source = image_el.attribute("source").as_string();
-  assert(source != "");
+  std::string imgsource = image_el.attribute("source").as_string();
+  assert(imgsource != "");
+
+  auto [img_size, img_data] = load_img_binary(db, imgsource);
+
+  assert(img_size > 0);
+  
+  // let's cast the const out of void 
+  void *bfr = cpy(img_data, img_size);
+
+  assert(bfr);
+
+  printf("trying to load %s\n", imgsource.c_str());
+
+  SDL_RWops *ops = SDL_RWFromMem(bfr, img_size);
+
+  if(!ops) {
+    printf("ops failed %s\n", SDL_GetError());
+    throw "";
+  }
+  
+  src_surface = IMG_Load_RW(ops, 1);
+  if(!src_surface) {
+    printf("IMG_Load_RW failed %s\n", SDL_GetError());
+    throw "";
+  }
     
-  auto img_path = basepath + "/" + source;
-
-  printf("trying to load %s\n", img_path.c_str());					      
-  src_surface = IMG_Load(img_path.c_str());
-
+  delete[] (reinterpret_cast<unsigned char*>(bfr));
+  
   assert(src_surface);
 
   for(SDL_Surface *s: linear_tile_surfaces) {
@@ -201,15 +248,6 @@ void Tileset::load_source(std::string basepath) {
   }
 }
 
-// this function introduces a hard dependency to SDL2 and tries to
-// load tilesets (both tsx and their accompanying pngs) in a way
-// that they could be drawn to a window
-void load_tileset_sdl_surfaces(std::string basepath, Map *map) {
-  for(Tileset *tileset: map->tilesets) {
-    tileset->load_source(basepath);
-  }
-}
-
 int tmxpath_to_id(const char *path, sqlite3 *db) {
   sqlite3_stmt *stmt;
   sqlite3_prepare(db, "SELECT ID FROM Map WHERE tmx_path = ?", -1, &stmt, nullptr);
@@ -222,57 +260,118 @@ int tmxpath_to_id(const char *path, sqlite3 *db) {
   sqlite3_finalize(stmt);
 
   return mapid;
-}  
+}
 
-// this cache is going to cause fun errors with this little planning of the memory usage...
-static std::unordered_map<int, Map*> loaded_maps;
-
-Map* read_map(const char *path, const char* sqlite_path) {
-  pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file(path);
-
+Project* read_project(const char *path) {
   sqlite3 *db = nullptr;
+  Project *project = new Project;
 
-  if(sqlite_path)
-    sqlite3_open(sqlite_path, &db);
+  auto result = sqlite3_open(path, &db);
 
-  printf("Opened sqlite file %s\n", sqlite_path);
+  if (result != SQLITE_OK) {
+    printf("Opening %s failed due to %s\n", path, sqlite3_errmsg(db));
+  }
+
+  printf("Opened project file %s\n", path);
+
+  sqlite3_stmt *stmt;
+  std::string map_q = "SELECT id, tmx_file FROM map";
+  sqlite3_prepare_v2(db, map_q.c_str(), map_q.size(), &stmt, nullptr);
+
+  int row_result = sqlite3_step(stmt);
+
+  if (row_result == SQLITE_ERROR) {
+    printf("Fetching maps failed %s\n", sqlite3_errmsg(db));
+    throw "";
+  }
+  
+  do {
+    int id = sqlite3_column_int(stmt, 0);
+    const char *tmx_blob = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, 1));
+    int size = sqlite3_column_bytes(stmt, 1);
+
+    assert(tmx_blob);
+    assert(size > 0);
+
+    std::string f;
+    f.assign(tmx_blob, size);
+    
+    std::variant<bool, Map> map_result = read_map(f.c_str(), id, db, project);
+    try {
+      project->maps.push_back(std::get<Map>(map_result));
+      puts("Loaded a map \n");
+    }
+    catch(std::bad_variant_access &ex) {
+      puts("Loading map seems to have failed\n");
+      return nullptr;
+    }
+  } while((row_result = sqlite3_step(stmt)) == SQLITE_ROW);
+
+  sqlite3_finalize(stmt);
+  sqlite3_close_v2(db);
+
+  return project;
+}
+
+ void Tileset::load_tsx_contents(sqlite3 *db) {
+   sqlite3_stmt *stmt;
+   std::string q = "SELECT tsx_contents FROM tileset WHERE filename = ?";
+   int res = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+
+   if (res != SQLITE_OK) {
+     printf("Load tsx_contents failed %s\n", sqlite3_errmsg(db));
+     throw "";
+   }
+
+   sqlite3_bind_text(stmt, 1, source_attribute, -1, SQLITE_STATIC);
+
+   res = sqlite3_step(stmt);
+   assert(res == SQLITE_ROW);
+
+   this->tsx_contents = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+   sqlite3_finalize(stmt);
+ }
+
+
+std::variant<bool, Map> read_map(const char *tmx_data, int map_id, sqlite3 *db, Project *proj) {
+  assert(tmx_data);
+  pugi::xml_document doc;
+  pugi::xml_parse_result result = doc.load_string(tmx_data);  
 
   if(!result) {
-    fprintf(stderr, "Couldn't load map %s\n", path);
-    return nullptr;
+    fprintf(stderr, "Couldn't load map\n");
+    return false;
   }
 
   auto map_element = doc.child("map");
-  Map *m = new Map;
+  Map m;
 
-  m->version = map_element.attribute("version").as_double();
+  m.databaseID = map_id;
+  m.version = map_element.attribute("version").as_double();
 
-  m->tiledversion = map_element.attribute("tiledversion").as_string();
-  m->orientation = map_element.attribute("orientation").as_string();
-  m->renderorder = map_element.attribute("renderorder").as_string();
+  m.tiledversion = map_element.attribute("tiledversion").as_string();
+  m.orientation = map_element.attribute("orientation").as_string();
+  m.renderorder = map_element.attribute("renderorder").as_string();
   // these are a lie when infinite-flag is true 
-  m->width = map_element.attribute("width").as_int();
-  m->height = map_element.attribute("height").as_int();
-  m->tilewidth = map_element.attribute("tilewidth").as_int();
-  m->tileheight = map_element.attribute("tileheight").as_int();
+  m.width = map_element.attribute("width").as_int();
+  m.height = map_element.attribute("height").as_int();
+  m.tilewidth = map_element.attribute("tilewidth").as_int();
+  m.tileheight = map_element.attribute("tileheight").as_int();
 
-  m->infinite = map_element.attribute("infinite").as_int() == 1;
-  m->nextlayerId = map_element.attribute("nextlayerId").as_int();
-  m->nextobjectid = map_element.attribute("nextobjectid").as_int();
-
-  if(db) {
-    m->databaseID = tmxpath_to_id(path, db);
-  }
+  m.infinite = map_element.attribute("infinite").as_int() == 1;
+  m.nextlayerId = map_element.attribute("nextlayerId").as_int();
+  m.nextobjectid = map_element.attribute("nextobjectid").as_int();
 
   auto tilesets = map_element.children("tileset");
 
   for(auto &tileset_element: tilesets) {
     Tileset *t = new Tileset;
     t->firstgid = tileset_element.attribute("firstgid").as_int();
-    t->source = tileset_element.attribute("source").as_string();
+    t->source_attribute = tileset_element.attribute("source").as_string();
     t->name = tileset_element.attribute("name").as_string();
-    m->tilesets.push_back(t);
+    t->load_tsx_contents(db);
+    t->load_source(db, t->tsx_contents);
+    m.tilesets.push_back(t);
   }
 
   auto layers = map_element.children("layer");
@@ -316,7 +415,7 @@ Map* read_map(const char *path, const char* sqlite_path) {
 	l.chunks.push_back(chunk);
       }}
 
-    m->layers.push_back(l);
+    m.layers.push_back(l);
   }
 
   auto objgroups = map_element.children("objectgroup");
@@ -350,11 +449,8 @@ Map* read_map(const char *path, const char* sqlite_path) {
 		
 	// mapid is generated by sqlite, and there is nothing more unique to be generated from a map other than it's path
 	// which should probably be set up as UNIQUE in sqlite too...
-	printf("Reading id of file %s\n", path);
-	int map_id = m->databaseID;
+	int map_id = m.databaseID;
 	assert(map_id>=0);
-
-	loaded_maps.insert({map_id, m});
 
 	printf("map id %d, o id %d\n", map_id, eo->id);
 
@@ -389,17 +485,13 @@ WHERE wc.src_map = ? AND src_o.id = ?", -1, &stmt, nullptr);
 	  assert(c_tmxpath);
 	  std::string dst_tmxpath(reinterpret_cast<const char*>(c_tmxpath));
 
-	  Map *dst_map;
-
-	  if(loaded_maps.contains(dst_map_id)) dst_map = loaded_maps.at(dst_map_id);
-	  else dst_map = read_map(dst_tmxpath.c_str(), sqlite_path);
-
 	  // x and y are in the destination map's "model space"
 	  eo->dst_x = dst_x;
 	  eo->dst_y = dst_y;
-	  eo->dst_map = dst_map;
+	  eo->dst_map_id = dst_map_id;
+	  eo->proj = proj;
 	  
-	  m->warpzones.push_back(eo);
+	  m.warpzones.push_back(eo);
 
 	  // TODO move back to while() initialization list
 	  step_result = sqlite3_step(stmt);
@@ -410,19 +502,16 @@ WHERE wc.src_map = ? AND src_o.id = ?", -1, &stmt, nullptr);
       }
 
       ogroup.objs.push_back(o);
-      m->objs.push_back(ogroup);
+      m.objs.push_back(ogroup);
     }
   }
 
-  std::string basepath(dirname(strdup(path)));
-  load_tileset_sdl_surfaces(basepath, m);
-
-  if (m->infinite) {
+  if (m.infinite) {
 
     // we don't actually support infinite maps, so... hopefully this works :D
       
     std::vector<int> xs, ys;
-    for(auto &l: m->layers)
+    for(auto &l: m.layers)
       for(auto &c: l.chunks) {
 	xs.push_back(c.x);
 	xs.push_back(c.x + c.width);
@@ -434,30 +523,17 @@ WHERE wc.src_map = ? AND src_o.id = ?", -1, &stmt, nullptr);
     auto horizontal = std::ranges::minmax(xs),
       vertical = std::ranges::minmax(ys);
 
-    m->width = horizontal.max - horizontal.min;
-    m->height = vertical.max - horizontal.min;      
+    m.width = horizontal.max - horizontal.min;
+    m.height = vertical.max - horizontal.min;      
   }
     
   return m;
 }
 
 Tileset::~Tileset() {
-  // puts("Freeing a ~Tileset");
-  for(SDL_Surface *srfc: linear_tile_surfaces) {
-    SDL_FreeSurface(srfc);
-  }
-  SDL_FreeSurface(src_surface);
 }
 
 Map::~Map() {
-  // puts("Freeing a ~map");
-
-  for(Tileset *t: tilesets){
-    delete t;
-  }
-    
-  SDL_DestroyTexture(rendered_map_tex);
-  SDL_FreeSurface(rendered_map);
 }
 
 void delete_map(Map *m) {
@@ -585,9 +661,18 @@ void BoxObject::render(SDL_Surface *dst, Map *m) {
 
 void EllipseObject::render(SDL_Surface *dst, Map *m) {}
 
-Map* EllipseObject::warpzone_dst_map() { return dst_map; }
+Map* EllipseObject::warpzone_dst_map(Project *proj)
+{
+  for(auto &map: proj->maps) {
+    if (map.databaseID == dst_map_id) {
+      return &map;
+    }
+  }
+  return nullptr;
+}
+    
 
-Map* Object::warpzone_dst_map() {
+Map* Object::warpzone_dst_map(Project *proj) {
   return nullptr;
 }
 
@@ -628,7 +713,7 @@ int map_w(Map *m) { return m->width; }
 
 int map_h(Map *m) { return m->height;}
 
-void generate_drawing_context(Map *m, drawing_state *ctx, SDL_Renderer *r, std::vector<Map*>* visited_maps, int depth, xy parent_map_location, xy parent_warpzone_location, xy dst_warpzone_location)
+void generate_drawing_context(Project *proj, Map *m, drawing_state *ctx, SDL_Renderer *r, std::vector<Map*>* visited_maps, int depth, xy parent_map_location, xy parent_warpzone_location, xy dst_warpzone_location)
 {
   if(! visited_maps) visited_maps = new std::vector<Map*>;
 
@@ -655,10 +740,19 @@ void generate_drawing_context(Map *m, drawing_state *ctx, SDL_Renderer *r, std::
   printf("%zu children being drawn\n", m->warpzones.size ());
 
   for(auto& child: m->warpzones) {
-    Map *dst = child->warpzone_dst_map();
+    Map *dst = child->warpzone_dst_map(proj);
     printf("Child %d\n", dst->databaseID);
     // if(std::find(visited_maps->begin(), visited_maps->end(), dst) != visited_maps->end()) continue;
 
-    generate_drawing_context(dst, ctx, r, visited_maps, depth + 1, {current_map_x, current_map_y}, {static_cast<int>(floor( child->x)), static_cast<int>(floor(child->y))}, {child->dst_x, child->dst_y});
+    generate_drawing_context(proj, dst, ctx, r, visited_maps, depth + 1, {current_map_x, current_map_y}, {static_cast<int>(floor( child->x)), static_cast<int>(floor(child->y))}, {child->dst_x, child->dst_y});
   }
 }
+
+Map *getMaps(Project *proj, int &count_of_maps) {
+  count_of_maps = proj->maps.size();
+  return proj->maps.data();
+}
+
+void map_x(Map *m, int x) { m->x = x; }
+
+void map_y(Map *m, int y) { m->y = y; }

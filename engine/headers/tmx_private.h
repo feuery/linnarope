@@ -4,6 +4,12 @@
 #include <SDL.h>
 
 #include "tmxreader.h"
+#include <sqlite3.h>
+
+class Project {
+public:
+  std::vector<Map> maps;
+};
 
 class Tile {
  public:
@@ -20,9 +26,13 @@ class Tile {
 class Tileset {
  public:
   int firstgid;
-  const char *source, *name;
+  const char *name, *source_attribute;
 
-  void load_source(std::string basepath);
+  std::string tsx_contents;
+
+  void load_tsx_contents(sqlite3 *db);
+  void load_source(sqlite3 *db, std::string &document);
+  std::tuple<int, const void*> load_img_binary(sqlite3* db, std::string &image_filename);
 
   int tilewidth, tileheight, tilecount, columns;
 
@@ -63,7 +73,7 @@ class Object {
   const char *name;
   double x, y, width, height;
 
-  virtual Map* warpzone_dst_map();
+  virtual Map* warpzone_dst_map(Project*);
   virtual void render(SDL_Surface *dst, Map *m) = 0;
 
   Object(Object &o);
@@ -74,9 +84,10 @@ class EllipseObject: public Object {
  public:
 
   // warpzone specific coordinates
-  int dst_x, dst_y;
-  Map *dst_map;
-  Map* warpzone_dst_map() override;
+  int dst_x, dst_y, dst_map_id;
+  Project *proj;
+  
+  Map* warpzone_dst_map(Project*) override;
   
   void render(SDL_Surface *dst, Map *m) override;
   EllipseObject() {}
@@ -131,3 +142,5 @@ class Map {
 
   ~Map();
 };
+
+std::variant<bool, Map> read_map(const char *tmx_data, int map_id, sqlite3 *db, Project *proj);

@@ -3,8 +3,6 @@
 #include <cassert>
 #include <cstdio>
 #include <SDL.h>
-#include "SDL_surface.h"
-#include "SDL_video.h"
 #include "finrope.h"
 #include <string>
 #include "tmxreader.h"
@@ -73,7 +71,7 @@ void cli_result::get_initial_tmx_path(const char *sqlite_path) {
 
 bool cli_result::process() {
   assert(map_path == "" || sqlite_path == "");
-  
+  return false; /*
   if(map_path != "" && png_path != "") {
 
     SDL_Window *w = createWindow(true);
@@ -114,7 +112,7 @@ bool cli_result::process() {
     SDL_FreeSurface(final_map);
     
     return true;
-  }
+    } */
 
   return false;
 }
@@ -155,7 +153,6 @@ cli_result handle_cli(int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
-
   cl_boot(argc, argv);
   atexit(cl_shutdown);
   start_swank();
@@ -171,20 +168,27 @@ int main (int argc, char **argv) {
   assert(window);
 
   auto *renderer = createRenderer(window);
-  assert(renderer); 
-  // Map *map = read_map("/Users/feuer/Projects/finrope/maps/pikkustadi-toolon tulli.tmx",
-  // 		      "/Users/feuer/Projects/finrope/resource_handler/resources.db");
-  puts("Read the whole stadi!");
+  assert(renderer);
+
+  Project* proj = read_project("/Users/feuer/Projects/finrope/resource_handler/ilpotestaa.game");
+  
+  int c = 0;
+  Map *map = getMaps(proj, c);
+
+  map_x(map, 0);
+  map_y(map, 0);
+
+  assert(c == 1);
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-  // render_map(map, renderer);
+  render_map(map, renderer);
 
   bool exit = false;
   SDL_Event eventData;
   while (!exit) {
     SDL_RenderClear(renderer);
 
-    // render_map(map, renderer);      
+    render_map(map, renderer);      
     SDL_RenderPresent(renderer);
        
     while (SDL_PollEvent(&eventData)) {
@@ -196,7 +200,7 @@ int main (int argc, char **argv) {
     }
   }
 
-  // delete_map(map);
+  delete_map(map);
 
   // Destroy the render, window and finalise SDL
   SDL_DestroyRenderer(renderer);
