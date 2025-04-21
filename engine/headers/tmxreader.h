@@ -9,6 +9,8 @@ extern "C" {
   class Map;
   class Script;
   
+  void eval(Script*);
+  
   Project* read_project(const char *path);
   Map* getMaps(Project *proj, int &count_of_maps);
 
@@ -26,3 +28,5 @@ extern "C" {
   struct xy { int x; int y; };
   void generate_drawing_context(Project *proj, Map *m, drawing_state *ctx, SDL_Renderer *r, std::vector<Map*>* visited_maps = nullptr, int depth = 1, xy parent_map_location = {0,0}, xy parent_warpzone_location = {0,0}, xy dst_warpzone_location = {0,0});
 }
+
+std::vector<Script*> getScripts(Project*);

@@ -10,6 +10,7 @@
 #include "tmxreader.h"
 #include "tmx_private.h"
 #include <sqlite3.h>
+#include <swank.h>
 
 Script::Script(Script &scr) : name(scr.name), script(scr.script) {}
 Script::Script(std::string &nme, std::string &scr): name(nme), script(scr) {}
@@ -780,6 +781,21 @@ void generate_drawing_context(Project *proj, Map *m, drawing_state *ctx, SDL_Ren
 Map *getMaps(Project *proj, int &count_of_maps) {
   count_of_maps = proj->maps.size();
   return proj->maps.data();
+}
+
+std::vector<Script*> getScripts(Project *proj) {
+  std::vector<Script*> toret;
+  
+  for (auto& [_, v]: proj->scripts) {
+    toret.push_back(&v);
+  }
+
+  return toret;
+}
+
+void eval(Script* scr) {
+  std::string form = "(progn " + scr->script + ")";
+  ecl_call(form.c_str());
 }
 
 void map_x(Map *m, int x) { m->x = x; }

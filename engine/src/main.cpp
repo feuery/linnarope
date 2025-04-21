@@ -174,6 +174,11 @@ int main (int argc, char **argv) {
   
   int c = 0;
   Map *map = getMaps(proj, c);
+  std::vector<Script*> scripts = getScripts(proj);
+
+  for(auto scr: scripts) {
+    eval(scr);
+  }
 
   map_x(map, 0);
   map_y(map, 0);
