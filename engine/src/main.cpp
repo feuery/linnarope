@@ -170,7 +170,7 @@ int main (int argc, char **argv) {
   auto *renderer = createRenderer(window);
   assert(renderer);
 
-  Project* proj = read_project("/Users/feuer/Projects/finrope/resource_handler/ilpotestaa.game");
+  Project* proj = read_project("/Users/feuer/Projects/finrope/linnarope-export.game");
   
   int c = 0;
   Map *map = getMaps(proj, c);

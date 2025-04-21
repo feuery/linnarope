@@ -7,6 +7,7 @@
 extern "C" {
   class Project;
   class Map;
+  class Script;
   
   Project* read_project(const char *path);
   Map* getMaps(Project *proj, int &count_of_maps);

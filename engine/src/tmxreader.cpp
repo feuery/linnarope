@@ -1,5 +1,4 @@
 #include <cassert>
-#include <cmath>
 #include <cstring>
 #include <pugixml.hpp>
 #include <cstdio>
@@ -11,6 +10,9 @@
 #include "tmxreader.h"
 #include "tmx_private.h"
 #include <sqlite3.h>
+
+Script::Script(Script &scr) : name(scr.name), script(scr.script) {}
+Script::Script(std::string &nme, std::string &scr): name(nme), script(scr) {}
 
 Tile::Tile(const Tile &t) {
   this->GlobalID = t.GlobalID;
@@ -262,6 +264,27 @@ int tmxpath_to_id(const char *path, sqlite3 *db) {
   return mapid;
 }
 
+void read_scripts(Project *proj, sqlite3 *db) {
+  sqlite3_stmt *stmt;
+  std::string q = "SELECT id, name, script FROM script";
+  int res = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+  if(res == SQLITE_ERROR) {
+    printf("read_scripts failed %s\n", sqlite3_errmsg(db));
+    throw "";
+  }
+
+  while((res = sqlite3_step(stmt)) == SQLITE_ROW) {
+    int id = sqlite3_column_int(stmt, 0);
+    std::string name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)),
+      script = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+
+    Script scr(name, script);    
+    proj->scripts[id] = scr;
+  }
+
+  sqlite3_finalize(stmt);
+}
+
 Project* read_project(const char *path) {
   sqlite3 *db = nullptr;
   Project *project = new Project;
@@ -270,6 +293,7 @@ Project* read_project(const char *path) {
 
   if (result != SQLITE_OK) {
     printf("Opening %s failed due to %s\n", path, sqlite3_errmsg(db));
+    throw "";
   }
 
   printf("Opened project file %s\n", path);
@@ -290,8 +314,8 @@ Project* read_project(const char *path) {
     const char *tmx_blob = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, 1));
     int size = sqlite3_column_bytes(stmt, 1);
 
-    assert(tmx_blob);
     assert(size > 0);
+    assert(tmx_blob);
 
     std::string f;
     f.assign(tmx_blob, size);
@@ -306,6 +330,11 @@ Project* read_project(const char *path) {
       return nullptr;
     }
   } while((row_result = sqlite3_step(stmt)) == SQLITE_ROW);
+
+  read_scripts(project, db);
+
+  assert(!project->scripts.empty());
+  printf("Sizeof scripts: %zu\n", project->scripts.size());
 
   sqlite3_finalize(stmt);
   sqlite3_close_v2(db);
