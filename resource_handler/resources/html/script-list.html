@@ -1,0 +1,10 @@
+<ul class="scripts">
+  {{#scripts}}
+  <li> <a href="/script/{{ID}}"> {{name}} </a> </li>
+  {{/scripts}}
+</ul>
+
+<form action="/new-script" method="post">
+  <label> New script's name <input type="text" name="new-name" id="new-name" /> </label>
+  <input type="submit" />
+</form>

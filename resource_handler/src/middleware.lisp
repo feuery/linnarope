@@ -47,7 +47,7 @@
   (let* ((component-data (funcall next))
 	 (component (alist-get component-data :component))
 	 (mustache:*escape-tokens* nil)
-	 (js-files (cons `((:src . "root.js"))
+	 (js-files (cons `((:src . "/root.js"))
 			 (alist-get component-data :js-files)))
 	 (params (concatenate 'list
 			      `((:js-files . ,js-files)

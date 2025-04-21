@@ -77,7 +77,16 @@
 		 :flex-direction "column"
 		 :max-width "10%")
 		(button
-		 :display :block))))
+		 :display :block)
+
+		;; script editor
+		(".ace"
+		 ;; percents crash the editor for... reasons?
+		 :height "1024px")
+		("#editor-container button"
+		 :display :inline)
+		("#editor-container input"
+		 :display :inline))))
 
 ;;(defheaderbutton export-into-file "Export project into a file")
 
@@ -92,7 +101,7 @@
 (defsubtab (new-palette "/new-palette" "new-palette.html" palettes :post) () (&post name)
   (assert name)
   `((:name . ,name)
-    (:js-files . (((:src . "palette-editor.js"))))))
+    (:js-files . (((:src . "/palette-editor.js"))))))
 
 (defun hex->color (hex)
   `((:color . ,hex)))
@@ -104,7 +113,7 @@
       `((:name . ,name)
 	(:palette-id . ,id)
 	(:colors . ,(mapcar #'hex->color (coerce colors 'list)))
-	(:js-files . (((:src . "palette-editor.js"))))))))
+	(:js-files . (((:src . "/palette-editor.js"))))))))
 
 (defun transform-obj (row)
   `((:name . ,(getf row :|name|))

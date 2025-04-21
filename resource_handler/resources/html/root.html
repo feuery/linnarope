@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <link href="/css" rel="stylesheet" type="text/css" />
     {{#js-files}}
-    <script src="/{{src}}"> </script>
+    <script src="{{src}}" {{#type}} type="{{type}}" {{/type}}> </script>
     {{/js-files}}
   </head>
   <body>

@@ -39,7 +39,8 @@
 		  :components ((:file "root")
 			       (:file "sprite")
 			       (:file "complete-map")
-			       (:file "export")))
+			       (:file "export")
+			       (:file "script")))
 		 (:module "routes"
 		  :components ((:file "sprite")))
 		 (:file "main")))))

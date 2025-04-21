@@ -120,4 +120,12 @@ CREATE TABLE IF NOT EXISTS sprite
   x INTEGER NOT NULL,
   y INTEGER NOT NULL,
   color_index INT NOT NULL DEFAULT 0)")
+
+	 (create-table "script"
+		       "CREATE TABLE IF NOT EXISTS script
+( ID SERIAL PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  script TEXT NOT NULL)")
+
+	 (exec "ALTER TABLE MAP ADD COLUMN IF NOT EXISTS entry_script INT NULL DEFAULT NULL REFERENCES script(ID) ON UPDATE CASCADE ON DELETE SET NULL")	 
 	 (format t "Migrated!~%"))))

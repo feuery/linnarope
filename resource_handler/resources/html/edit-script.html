@@ -1,0 +1,24 @@
+<script>
+
+  window.addEventListener('DOMContentLoaded', _ => {
+      document.querySelector('#sub').addEventListener('click', async function(_) {
+	  let id = {{id}};
+	  let script_name = document.querySelector('#name').value;
+	  let script_contents = document.querySelector('#script-contents').value;
+
+	  let resp = await fetch(`/script/${id}`, {method: 'POST',
+						   body: JSON.stringify({id: id,
+									 name: script_name,
+									 content: script_contents})});
+
+	  alert('Save ' + (resp.ok ? 'successful': 'failed'));
+      });
+  });
+  
+</script>
+
+<div id="editor-container">
+  <input type="text" id="name" name="name" value="{{name}}" />
+  <button id="sub" type="button">Save script </button>
+  <ace-editor id="script-contents" class="ace" theme="ace/theme/monokai" mode="ace/mode/lisp" value="{{script}}"> </ace-editor>  
+</div>
