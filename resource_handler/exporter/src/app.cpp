@@ -6,6 +6,7 @@
 #include <pqxx/pqxx>
 #include <sqlite3.h>
 #include <app.h>
+#include <script.h>
 
 bool exec_ddl(sqlite3 *db, const char *sql) {
   sqlite3_stmt *stmt;
@@ -120,7 +121,7 @@ CREATE TABLE IF NOT EXISTS script
   script TEXT NOT NULL))",
     R"(
 ALTER TABLE MAP
-ADD COLUMN IF NOT EXISTS entry_script
+ADD COLUMN entry_script
     INT NULL DEFAULT NULL
     REFERENCES script(ID) ON UPDATE CASCADE ON DELETE SET NULL)"
     };
@@ -136,6 +137,9 @@ void Exporter::do_it(std::string &psql_connstring, std::string dst_sqlite_path) 
     exec_ddl(db, ddl.c_str());
   }
 
+  // maps have a dependency to scripts 
+  export_scripts(w, db);
+  
   export_maps(w, db);
   export_sprites(w, db);
   export_lisp_sprites(w, db);
@@ -155,7 +159,8 @@ void Importer::do_it(std::string &psql_connstring, std::string sqlite_path) {
   pqxx::connection c(psql_connstring);
   pqxx::work w{c};
 
-  if(import_maps(w, db) && 
+  if(import_scripts(w, db) &&
+     import_maps(w, db) && 
      import_sprites(w, db) && 
      import_lisp_sprites(w, db)) {
     w.commit();

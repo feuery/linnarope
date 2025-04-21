@@ -34,7 +34,7 @@
 
     (format t "Running `~a ~a`~%" *exporter-bin-path* final-path)
 
-    (sb-ext:run-program *exporter-bin-path* (list (format nil "~a" final-path)))
+    (sb-ext:run-program *exporter-bin-path* (list (format nil "~a" final-path)) :output t)
 
     (format nil "Game package should now exist in ~a" final-path)))
 

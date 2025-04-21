@@ -216,13 +216,13 @@ bool export_tilesets(pqxx::work &tx, sqlite3 *db)
 }
 
 bool export_maps(pqxx::work &tx, sqlite3 *db) {
-  for(auto [id, tmx_path, png_path, orientation, renderorder, width, height, tilewidth, tileheight, infinite, nextlayerid, nextobjectid, tmx_file]:
+  for(auto [id, tmx_path, png_path, orientation, renderorder, width, height, tilewidth, tileheight, infinite, nextlayerid, nextobjectid, tmx_file, entry_script_id]:
 	tx.query<int, std::string,  std::string, std::string, std::string,
-	int, int, int, int, bool, int, int, pqxx::bytes>("SELECT * FROM map")) {
+	int, int, int, int, bool, int, int, pqxx::bytes, std::optional<int>>("SELECT * FROM map")) {
     printf("exporting: %s\n", tmx_path.c_str());
 
     sqlite3_stmt *stmt;
-    std::string insert_q = "INSERT INTO map (id, tmx_path, png_path, orientation, renderorder, width, height, tilewidth, tileheight, infinite, nextlayerid, nextobjectid, tmx_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string insert_q = "INSERT INTO map (id, tmx_path, png_path, orientation, renderorder, width, height, tilewidth, tileheight, infinite, nextlayerid, nextobjectid, tmx_file, entry_script) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     int rc = sqlite3_prepare_v2(db, insert_q.c_str(), insert_q.length() , &stmt, nullptr);
 
     if(rc != SQLITE_OK) {
@@ -244,6 +244,7 @@ bool export_maps(pqxx::work &tx, sqlite3 *db) {
     sqlite3_bind_int(stmt, 11, nextlayerid);
     sqlite3_bind_int(stmt, 12, nextobjectid);
     sqlite3_bind_blob(stmt, 13, tmx_file.data(), tmx_file.size(), SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 14, entry_script_id.value_or(SQLITE_NULL));
 
 
     if(sqlite3_step(stmt) == SQLITE_ERROR) {
