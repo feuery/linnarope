@@ -323,14 +323,26 @@ Project* read_project(const char *path) {
     int size = sqlite3_column_bytes(stmt, 1),
       entry_script_id = sqlite3_column_int(stmt, 2);
 
+    int entry_script_id_type = sqlite3_column_type(stmt, 2);
+    
+
     printf("Entry script id %d\n", entry_script_id);
     assert(size > 0);
     assert(tmx_blob);
 
     std::string f;
     f.assign(tmx_blob, size);
+
+    std::variant<int, bool> idd;
+    if(entry_script_id_type == SQLITE_INTEGER) {
+      puts("It's int! \n");
+      idd = entry_script_id;
+    } else {
+      puts("It's not int!\n");
+      idd = false;
+    }
     
-    std::variant<bool, Map> map_result = read_map(f.c_str(), id, entry_script_id,  db, project);
+    std::variant<bool, Map> map_result = read_map(f.c_str(), id, idd,  db, project);
     try {
       project->maps.push_back(std::get<Map>(map_result));
       puts("Loaded a map \n");
@@ -407,8 +419,10 @@ std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<
   try {
     m.entry_script_id = std::get<int>(entry_script_id);
     m.entry_script_found = true;
+    printf("Entry script %d found\n", m.entry_script_id);
   }
   catch(const std::bad_variant_access& ex) {
+    puts("Entry script not found, was probably null in sqlite\n");
     m.entry_script_found = false;
   }
 
