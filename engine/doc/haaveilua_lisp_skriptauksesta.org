@@ -1,0 +1,5 @@
+Jokaisella kartalla on tietokannassa merkintä skriptistä, joka ajetaan kun enginen valituksi kartaksi vaihtuu joku toinen. Tässä skriptissä pitäisi sitten olla rajapinta, jossa tarjotaan lambdat :setup, :teardown ja :update. Setup ajettaisiin heti varsinaisen skriptin eval()in perään, updatea kutsuttaisiin pääluupissa joka kierroksella, ja teardown ajettaisiin vanhan kartan kontekstissa ennen kuin uusi kartta vaihdetaan tilalle.
+
+Updaten sisällä pitäisi olla tarjolla joku polymorfinen draw-metodi, api jolla lukea näppäimistön ja hiiren tilaa (proseduaalisesti eikä millään eventeillä), sekä rajapinta jolla hakea enginen rekisteristä uusia olioita (spritejä, uusia skriptejä, muita karttoja).
+
+Lisäksi updaten sisällä tulisi voida vaihtaa nykyistä karttaa muualle.
