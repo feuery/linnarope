@@ -9,3 +9,4 @@ void start_swank();
                       args)
 
 cl_object ecl_call(const char *call);
+cl_object lol();

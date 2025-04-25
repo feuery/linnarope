@@ -10,6 +10,7 @@
 #include <SDL_image.h>
 #include <sqlite3.h>
 #include "swank.h"
+#include <engine_api.h>
 
 struct cli_result {
   std::string map_path;
@@ -156,6 +157,11 @@ int main (int argc, char **argv) {
   cl_boot(argc, argv);
   atexit(cl_shutdown);
   start_swank();
+
+  std::vector<fn> fns;
+  fns.push_back({"lol", lol, 0});
+
+  register_callbacks(fns);
   
   auto cliresult = handle_cli(argc, argv);
 

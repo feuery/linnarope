@@ -38,8 +38,6 @@ void start_swank() {
     CL_UNWIND_PROTECT_END;
   }
   CL_CATCH_ALL_END;
-
-  DEFUN("lol", lol, 0);
 }
 
 
