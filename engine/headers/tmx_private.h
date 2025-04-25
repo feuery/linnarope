@@ -151,7 +151,12 @@ class Map {
   void renderMap(SDL_Renderer*);
   SDL_Surface* tileAt(int globalID);
 
+  // this should be an address to project's script hash table
+  int entry_script_id;
+  bool entry_script_found;
+  Script *entry_script;
+
   ~Map();
 };
 
-std::variant<bool, Map> read_map(const char *tmx_data, int map_id, sqlite3 *db, Project *proj);
+std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj);

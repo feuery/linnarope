@@ -174,11 +174,6 @@ int main (int argc, char **argv) {
   
   int c = 0;
   Map *map = getMaps(proj, c);
-  std::vector<Script*> scripts = getScripts(proj);
-
-  for(auto scr: scripts) {
-    eval(scr);
-  }
 
   map_x(map, 0);
   map_y(map, 0);
@@ -188,8 +183,13 @@ int main (int argc, char **argv) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   render_map(map, renderer);
 
+  assert_map_makes_sense(map);
+
   bool exit = false;
   SDL_Event eventData;
+
+  eval_entry_script(map);
+  
   while (!exit) {
     SDL_RenderClear(renderer);
 

@@ -286,6 +286,13 @@ void read_scripts(Project *proj, sqlite3 *db) {
   sqlite3_finalize(stmt);
 }
 
+void assign_entry_scripts(Project *proj) {
+  for (Map &m : proj->maps) {
+    if(!m.entry_script_found) continue;
+    m.entry_script = &proj->scripts[m.entry_script_id];
+  }
+}
+
 Project* read_project(const char *path) {
   sqlite3 *db = nullptr;
   Project *project = new Project;
@@ -300,7 +307,7 @@ Project* read_project(const char *path) {
   printf("Opened project file %s\n", path);
 
   sqlite3_stmt *stmt;
-  std::string map_q = "SELECT id, tmx_file FROM map";
+  std::string map_q = "SELECT id, tmx_file, entry_script FROM map";
   sqlite3_prepare_v2(db, map_q.c_str(), map_q.size(), &stmt, nullptr);
 
   int row_result = sqlite3_step(stmt);
@@ -313,15 +320,17 @@ Project* read_project(const char *path) {
   do {
     int id = sqlite3_column_int(stmt, 0);
     const char *tmx_blob = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, 1));
-    int size = sqlite3_column_bytes(stmt, 1);
+    int size = sqlite3_column_bytes(stmt, 1),
+      entry_script_id = sqlite3_column_int(stmt, 2);
 
+    printf("Entry script id %d\n", entry_script_id);
     assert(size > 0);
     assert(tmx_blob);
 
     std::string f;
     f.assign(tmx_blob, size);
     
-    std::variant<bool, Map> map_result = read_map(f.c_str(), id, db, project);
+    std::variant<bool, Map> map_result = read_map(f.c_str(), id, entry_script_id,  db, project);
     try {
       project->maps.push_back(std::get<Map>(map_result));
       puts("Loaded a map \n");
@@ -333,9 +342,9 @@ Project* read_project(const char *path) {
   } while((row_result = sqlite3_step(stmt)) == SQLITE_ROW);
 
   read_scripts(project, db);
+  assign_entry_scripts(project);
 
   assert(!project->scripts.empty());
-  printf("Sizeof scripts: %zu\n", project->scripts.size());
 
   sqlite3_finalize(stmt);
   sqlite3_close_v2(db);
@@ -363,7 +372,7 @@ Project* read_project(const char *path) {
  }
 
 
-std::variant<bool, Map> read_map(const char *tmx_data, int map_id, sqlite3 *db, Project *proj) {
+std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj) {
   assert(tmx_data);
   pugi::xml_document doc;
   pugi::xml_parse_result result = doc.load_string(tmx_data);  
@@ -391,6 +400,17 @@ std::variant<bool, Map> read_map(const char *tmx_data, int map_id, sqlite3 *db, 
   m.infinite = map_element.attribute("infinite").as_int() == 1;
   m.nextlayerId = map_element.attribute("nextlayerId").as_int();
   m.nextobjectid = map_element.attribute("nextobjectid").as_int();
+  m.entry_script = nullptr;
+  m.rendered_map = nullptr;
+  m.rendered_map_tex = nullptr;
+
+  try {
+    m.entry_script_id = std::get<int>(entry_script_id);
+    m.entry_script_found = true;
+  }
+  catch(const std::bad_variant_access& ex) {
+    m.entry_script_found = false;
+  }
 
   auto tilesets = map_element.children("tileset");
 
@@ -801,3 +821,12 @@ void eval(Script* scr) {
 void map_x(Map *m, int x) { m->x = x; }
 
 void map_y(Map *m, int y) { m->y = y; }
+
+void eval_entry_script(Map *m) {
+  if(m->entry_script_found && m->entry_script) eval (m->entry_script);
+}
+
+void assert_map_makes_sense(Map* m) {
+  assert (m->rendered_map->w > 0);
+  assert (m->rendered_map->h > 0);
+}
