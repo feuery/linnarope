@@ -1,6 +1,5 @@
 #include <cassert>
-#include "simulated_drawing.h"
-#include "SDL_surface.h"
+#include <simulated_drawing.h>
 #include <SDL.h>
 #include <vector>
 

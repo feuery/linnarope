@@ -1,13 +1,8 @@
 #pragma once
 
-#include <vector>
 #include <ecl/ecl.h>
 
-class fn {
-public:
-  const char *name;
-  cl_objectfn_fixed fun;
-  int count_of_args;
-};
+cl_object setup_scene(cl_object startup, cl_object update,
+                      cl_object teardown);
 
-void register_callbacks(std::vector<fn> &fns);
+void register_callbacks();

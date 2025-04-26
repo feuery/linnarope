@@ -7,8 +7,8 @@
 #include <vector>
 #include <SDL.h>
 #include <SDL_image.h>
-#include "tmxreader.h"
-#include "tmx_private.h"
+#include <tmxreader.h>
+#include <tmx_private.h>
 #include <sqlite3.h>
 #include <swank.h>
 

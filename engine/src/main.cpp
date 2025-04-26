@@ -3,14 +3,17 @@
 #include <cassert>
 #include <cstdio>
 #include <SDL.h>
-#include "finrope.h"
-#include <string>
-#include "tmxreader.h"
+#include <finrope.h>
+#include <tmxreader.h>
 #include <getopt.h>
 #include <SDL_image.h>
 #include <sqlite3.h>
-#include "swank.h"
+#include <swank.h>
 #include <engine_api.h>
+#include <scene.h>
+#include <string>
+
+Scene* current_scene = nullptr;
 
 struct cli_result {
   std::string map_path;
@@ -158,10 +161,7 @@ int main (int argc, char **argv) {
   atexit(cl_shutdown);
   start_swank();
 
-  std::vector<fn> fns;
-  fns.push_back({"lol", lol, 0});
-
-  register_callbacks(fns);
+  register_callbacks();
   
   auto cliresult = handle_cli(argc, argv);
 
@@ -194,12 +194,16 @@ int main (int argc, char **argv) {
   bool exit = false;
   SDL_Event eventData;
 
-  eval_entry_script(map);
+  Scene scn; //(proj);
+  scn.changeMap(map);
+
+  current_scene = &scn;
+  
   
   while (!exit) {
     SDL_RenderClear(renderer);
 
-    render_map(map, renderer);      
+    // render_map(map, renderer);      
     SDL_RenderPresent(renderer);
        
     while (SDL_PollEvent(&eventData)) {
@@ -209,6 +213,8 @@ int main (int argc, char **argv) {
 	break;
       }
     }
+
+    scn.update();
   }
 
   delete_map(map);

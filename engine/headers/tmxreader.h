@@ -2,7 +2,7 @@
 
 #include <SDL.h>
 #include <vector>
-#include "simulated_drawing.h"
+#include <simulated_drawing.h>
 
 extern "C" {
   class Project;

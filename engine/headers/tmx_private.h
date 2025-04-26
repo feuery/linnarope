@@ -4,7 +4,7 @@
 #include <SDL.h>
 #include <unordered_map>
 
-#include "tmxreader.h"
+#include <tmxreader.h>
 #include <sqlite3.h>
 
 class Script {

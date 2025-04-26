@@ -1,5 +1,4 @@
-#include "ecl/ecl.h"
-#include "ecl/external.h"
+#include <ecl/ecl.h>
 #include <swank.h>
 #include <string>
 
