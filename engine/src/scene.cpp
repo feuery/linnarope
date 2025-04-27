@@ -1,11 +1,11 @@
 #include <handle.h>
+#include <stdexcept>
 #include <string>
 #include <tmxreader.h>
 #include <swank.h>
 #include <scene.h>
 #include <engine_api.h>
 #include <tmx_private.h>
-#include <unordered_map>
 #include <project.h>
 
 Scene::Scene(Project *p): proj(p), 
@@ -29,16 +29,18 @@ void Scene::register_callbacks(cl_object startup, cl_object update, cl_object te
   this->current_teardown = teardown;
 }
 
-int Scene::get_resource(const char *typename_, const char *resourcename) {
+int Scene::resource_to_handle(const char *typename_, const char *resourcename_) {
   assert(proj);
 
   Resource *r = nullptr;
   std::string type(typename_);
+  std::string resourcename(resourcename_);
+  
   if(type == "Map") {
     r = &proj->maps.at(resourcename);
   }
   else if(type == "Script") {
-    r = &proj->getScript(resourcename);
+    r = &proj->getScript(resourcename.c_str());
   }
   else if (type == "Lisp sprite") {
     r = &proj->lisp_sprites.at(resourcename);
@@ -53,4 +55,8 @@ int Scene::get_resource(const char *typename_, const char *resourcename) {
   assert(r);
 
   return toHandle(r);
+}
+
+Resource* Scene::handle_to_resource(int hndl) {
+  return fromHandle(hndl);
 }

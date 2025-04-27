@@ -1,3 +1,4 @@
+#include "finrope.h"
 #include <cassert>
 #include <cstring>
 #include <pugixml.hpp>
@@ -837,6 +838,15 @@ void eval_entry_script(Map *m) {
 void assert_map_makes_sense(Map* m) {
   assert (m->rendered_map->w > 0);
   assert (m->rendered_map->h > 0);
+}
+
+void Resource::render_to_screen(int x, int y) {}
+void Map::render_to_screen(int x, int y)
+{
+  assert(current_renderer);
+  this->x = x;
+  this->y = y;
+  render_map(this, current_renderer);
 }
 
 // can't this bullshit really be macrofied?

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <ecl/ecl.h>
-
 #include <tmxreader.h>
+#include <tmx_private.h>
 
 
 /*
@@ -24,5 +24,6 @@ class Scene {
   
   void register_callbacks(cl_object startup, cl_object update, cl_object teardown);
   void update();
-  int get_resource(const char *typename_, const char *resourcename);
+  int resource_to_handle(const char *typename_, const char *resourcename);
+  Resource* handle_to_resource(int handle);
 };

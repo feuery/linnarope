@@ -1,3 +1,4 @@
+#include "SDL_render.h"
 #include <ecl/ecl.h>
 
 #include <cassert>
@@ -14,7 +15,8 @@
 #include <string>
 #include <project.h>
 
-Scene* current_scene = nullptr;
+Scene *current_scene = nullptr;
+SDL_Renderer *current_renderer = nullptr;
 
 struct cli_result {
   std::string map_path;
@@ -176,6 +178,7 @@ int main (int argc, char **argv) {
 
   auto *renderer = createRenderer(window);
   assert(renderer);
+  current_renderer = renderer;
 
   Project* proj = read_project("/Users/feuer/Projects/finrope/linnarope-export.game");
 
@@ -209,7 +212,7 @@ int main (int argc, char **argv) {
     SDL_RenderClear(renderer);
 
     // render_map(map, renderer);      
-    SDL_RenderPresent(renderer);
+    
        
     while (SDL_PollEvent(&eventData)) {
       switch (eventData.type) {
@@ -220,6 +223,7 @@ int main (int argc, char **argv) {
     }
 
     scn.update();
+    SDL_RenderPresent(renderer);
   }
 
   delete_map(map);

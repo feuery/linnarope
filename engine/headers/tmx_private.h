@@ -7,7 +7,9 @@
 #include <sqlite3.h>
 
 class Resource {
+public:
   virtual const char* get_typename() = 0;
+  virtual void render_to_screen(int x, int y);
 };
 
 class Script: public Resource {
@@ -178,6 +180,7 @@ public:
   std::string name; // filename is calculated by tmx_path ~= s/.tmx$//
 
   const char* get_typename() override;
+  void render_to_screen(int x, int y) override;
 
   virtual ~Map();
 };
