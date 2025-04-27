@@ -12,7 +12,6 @@ extern "C" {
   void eval(Script*);
   
   Project* read_project(const char *path);
-  Map* getMaps(Project *proj, int &count_of_maps);
   void eval_entry_script(Map *m);
 
   void render_map(Map *m, SDL_Renderer *r);
@@ -30,5 +29,3 @@ extern "C" {
 
   void assert_map_makes_sense(Map*);
 }
-
-std::vector<Script*> getScripts(Project*);

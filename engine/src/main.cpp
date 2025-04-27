@@ -12,6 +12,7 @@
 #include <engine_api.h>
 #include <scene.h>
 #include <string>
+#include <project.h>
 
 Scene* current_scene = nullptr;
 
@@ -177,14 +178,18 @@ int main (int argc, char **argv) {
   assert(renderer);
 
   Project* proj = read_project("/Users/feuer/Projects/finrope/linnarope-export.game");
-  
-  int c = 0;
-  Map *map = getMaps(proj, c);
+
+  auto &p = *proj->maps.begin();
+  Map *map = &p.second;
+
+  puts("Loaded maps: ");
+  for(auto& pair: proj->maps){
+    printf("\"%s\", ", pair.first.c_str());
+  }
+  puts("\n");
 
   map_x(map, 0);
   map_y(map, 0);
-
-  assert(c == 1);
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   render_map(map, renderer);
@@ -194,7 +199,7 @@ int main (int argc, char **argv) {
   bool exit = false;
   SDL_Event eventData;
 
-  Scene scn; //(proj);
+  Scene scn(proj);
   scn.changeMap(map);
 
   current_scene = &scn;

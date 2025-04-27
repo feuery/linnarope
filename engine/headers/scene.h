@@ -14,15 +14,15 @@
 
 class Scene {
  private:
-  // Project *proj;
+  Project *proj;
   
   cl_object current_startup, current_update, current_teardown;
   
  public:
-  Scene(// Project *p
-	);
+  Scene(Project *p);
   void changeMap(Map *m);
   
   void register_callbacks(cl_object startup, cl_object update, cl_object teardown);
   void update();
+  int get_resource(const char *typename_, const char *resourcename);
 };

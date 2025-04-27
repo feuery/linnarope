@@ -43,3 +43,36 @@ void start_swank() {
 cl_object ecl_call(const char *call){
   return cl_safe_eval(c_string_to_object(call), Cnil, Cnil);
 }
+
+// copypasted from my ancient repo
+// https://github.com/feuery/qmapper/blob/0bb62e54164871356342b1e01d1feb06762c799a/src/cpp/guile_fn.cpp#L46
+// no clue where this function appeared there though
+std::string ecl_string_to_string(cl_object echar) {
+  switch (ecl_t_of(echar)) {
+#ifdef ECL_UNICODE
+  case t_string:
+    if (!ecl_fits_in_base_string(echar)) {
+      echar = cl_copy_seq(echar);
+    } else {
+      echar = si_copy_to_simple_base_string(echar);
+    }
+    break;
+#endif
+  case t_base_string:
+    // OK
+    break;
+  default:
+    // PRINT SOME ERROR
+    return std::string(); // or raise an exception
+  }
+
+  std::string res("");
+  int j = echar->base_string.dim; //get dimension   
+  ecl_base_char* selv = echar->base_string.self; //get pointer   
+
+  //do simple pointer addition
+  for(int i=0;i<j;i++){
+    res += (*(selv+i));
+  }
+  return res;
+}

@@ -2,28 +2,26 @@
 
 #include <vector>
 #include <SDL.h>
-#include <unordered_map>
 
 #include <tmxreader.h>
 #include <sqlite3.h>
 
-class Script {
+class Resource {
+  virtual const char* get_typename() = 0;
+};
+
+class Script: public Resource {
 public:
   Script() {}
   Script(Script &scr);
   Script(std::string &nme, std::string &scr);
   std::string name, script;
+
+  const char* get_typename() override;
 };
 
-class Project {
+class Tile: public Resource {
 public:
-  std::vector<Map> maps;
-  // id->script
-  std::unordered_map<int, Script> scripts;
-};
-
-class Tile {
- public:
   /* there should be no > SIGNED_INT_MAX ids at this point */
   int GlobalID;
 
@@ -31,16 +29,22 @@ class Tile {
 
   Tile (int gid, bool fhor, bool fver);
   Tile (const Tile& t);
- private: Tile ();
+
+  virtual ~Tile();
+  
+  const char* get_typename() override;
+private: Tile ();
 };
 
-class Tileset {
- public:
+class Tileset: public Resource {
+public:
   int firstgid;
   const char *name, *source_attribute;
 
   std::string tsx_contents;
 
+  const char* get_typename() override;
+  
   void load_tsx_contents(sqlite3 *db);
   void load_source(sqlite3 *db, std::string &document);
   std::tuple<int, const void*> load_img_binary(sqlite3* db, std::string &image_filename);
@@ -63,23 +67,29 @@ enum Encoding{
   EncodingError
 };
 
-class LayerChunk {
- public:
+class LayerChunk: public Resource {
+public:
   int x, y, width, height;
   /* a 2d array limited by the width and height fields */
   std::vector<std::vector<Tile>> tiles;
+
+  const char* get_typename() override;
+  virtual ~LayerChunk();
 };
 
-class Layer {
- public:
+class Layer: public Resource {
+public:
   int id, width, height;
   const char *name;
   Encoding enc;
   std::vector<LayerChunk> chunks;
+
+  const char* get_typename() override;
+  virtual ~Layer();
 };
 
-class Object {
- public:
+class Object: public Resource {
+public:
   int id;
   const char *name;
   double x, y, width, height;
@@ -92,7 +102,7 @@ class Object {
 };
 
 class EllipseObject: public Object {
- public:
+public:
 
   // warpzone specific coordinates
   int dst_x, dst_y, dst_map_id;
@@ -102,34 +112,43 @@ class EllipseObject: public Object {
   
   void render(SDL_Surface *dst, Map *m) override;
   EllipseObject() {}
+
+  const char* get_typename() override;
 };
 
 class BoxObject: public Object {
- public:    
+public:    
   void render(SDL_Surface *dst, Map *m) override;
 
   BoxObject() {}
+  const char* get_typename() override;
 };
 
 class ImageObject: public Object {
- public:
+public:
   int gid;
 
-  void render(SDL_Surface *dst, Map *m);
+  void render(SDL_Surface *dst, Map *m) override;
 
   ImageObject(ImageObject &io);
   ImageObject() {}
+
+  const char* get_typename() override;
 };
 
-class ObjectGroup {
- public:
+class ObjectGroup: public Resource {
+public:
   int id;
   const char *name;
   std::vector<Object*> objs;
+
+  const char* get_typename() override;
+
+  virtual ~ObjectGroup();
 };
   
-class Map {
- public:    
+class Map: public Resource {
+public:    
   double version;
   const char *tiledversion, *orientation, *renderorder;
   int width, height, tilewidth, tileheight, databaseID;
@@ -156,7 +175,11 @@ class Map {
   bool entry_script_found;
   Script *entry_script;
 
-  ~Map();
+  std::string name; // filename is calculated by tmx_path ~= s/.tmx$//
+
+  const char* get_typename() override;
+
+  virtual ~Map();
 };
 
 std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj);

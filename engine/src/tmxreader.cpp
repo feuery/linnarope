@@ -11,6 +11,7 @@
 #include <tmx_private.h>
 #include <sqlite3.h>
 #include <swank.h>
+#include <project.h>
 
 Script::Script(Script &scr) : name(scr.name), script(scr.script) {}
 Script::Script(std::string &nme, std::string &scr): name(nme), script(scr) {}
@@ -32,7 +33,11 @@ Tile::Tile (int gid, bool fhor, bool fver) {
   this->flipped_horizontally = fhor;
   this->flipped_vertically = fver;
 }
-    
+
+ObjectGroup::~ObjectGroup() {}
+Tile::~Tile() {}
+Layer::~Layer() {}
+LayerChunk::~LayerChunk() {}    
 
 Tile unwrap_tile_id(unsigned int tile) {
 
@@ -279,17 +284,20 @@ void read_scripts(Project *proj, sqlite3 *db) {
     std::string name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)),
       script = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
 
-    Script scr(name, script);    
-    proj->scripts[id] = scr;
+    Script scr(name, script);
+    proj->insertScript(id, name.c_str(), scr);
   }
 
   sqlite3_finalize(stmt);
 }
 
 void assign_entry_scripts(Project *proj) {
-  for (Map &m : proj->maps) {
+  for (auto& pair : proj->maps) {
+    Map &m = pair.second;
     if(!m.entry_script_found) continue;
-    m.entry_script = &proj->scripts[m.entry_script_id];
+
+    Script &scr = proj->getScript(m.entry_script_id);    
+    m.entry_script = &scr;
   }
 }
 
@@ -307,7 +315,7 @@ Project* read_project(const char *path) {
   printf("Opened project file %s\n", path);
 
   sqlite3_stmt *stmt;
-  std::string map_q = "SELECT id, tmx_file, entry_script FROM map";
+  std::string map_q = "SELECT id, tmx_file, entry_script, tmx_path FROM map";
   sqlite3_prepare_v2(db, map_q.c_str(), map_q.size(), &stmt, nullptr);
 
   int row_result = sqlite3_step(stmt);
@@ -324,6 +332,9 @@ Project* read_project(const char *path) {
       entry_script_id = sqlite3_column_int(stmt, 2);
 
     int entry_script_id_type = sqlite3_column_type(stmt, 2);
+
+    const char *tmx_path_ = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+    std::string tmx_path (tmx_path_);
     
 
     printf("Entry script id %d\n", entry_script_id);
@@ -335,17 +346,16 @@ Project* read_project(const char *path) {
 
     std::variant<int, bool> idd;
     if(entry_script_id_type == SQLITE_INTEGER) {
-      puts("It's int! \n");
       idd = entry_script_id;
     } else {
-      puts("It's not int!\n");
       idd = false;
     }
     
     std::variant<bool, Map> map_result = read_map(f.c_str(), id, idd,  db, project);
     try {
-      project->maps.push_back(std::get<Map>(map_result));
-      puts("Loaded a map \n");
+      Map m = std::get<Map>(map_result);
+      m.name = tmx_path;
+      project->maps[m.name] = m;
     }
     catch(std::bad_variant_access &ex) {
       puts("Loading map seems to have failed\n");
@@ -355,8 +365,6 @@ Project* read_project(const char *path) {
 
   read_scripts(project, db);
   assign_entry_scripts(project);
-
-  assert(!project->scripts.empty());
 
   sqlite3_finalize(stmt);
   sqlite3_close_v2(db);
@@ -727,7 +735,8 @@ void EllipseObject::render(SDL_Surface *dst, Map *m) {}
 
 Map* EllipseObject::warpzone_dst_map(Project *proj)
 {
-  for(auto &map: proj->maps) {
+  for(auto &pair: proj->maps) {
+    Map &map = pair.second;
     if (map.databaseID == dst_map_id) {
       return &map;
     }
@@ -812,21 +821,6 @@ void generate_drawing_context(Project *proj, Map *m, drawing_state *ctx, SDL_Ren
   }
 }
 
-Map *getMaps(Project *proj, int &count_of_maps) {
-  count_of_maps = proj->maps.size();
-  return proj->maps.data();
-}
-
-std::vector<Script*> getScripts(Project *proj) {
-  std::vector<Script*> toret;
-  
-  for (auto& [_, v]: proj->scripts) {
-    toret.push_back(&v);
-  }
-
-  return toret;
-}
-
 void eval(Script* scr) {
   std::string form = "(progn " + scr->script + ")";
   ecl_call(form.c_str());
@@ -844,3 +838,16 @@ void assert_map_makes_sense(Map* m) {
   assert (m->rendered_map->w > 0);
   assert (m->rendered_map->h > 0);
 }
+
+// can't this bullshit really be macrofied?
+
+const char* Script::get_typename() { return "Script"; }
+const char* Tile::get_typename() { return "Tile"; }
+const char* Tileset::get_typename() { return "Tileset"; }
+const char* LayerChunk::get_typename() { return "LayerChunk"; }
+const char* Layer::get_typename() { return "Layer"; }
+const char* EllipseObject::get_typename() { return "EllipseObject"; }
+const char* BoxObject::get_typename() { return "BoxObject"; }
+const char* ImageObject::get_typename() { return "ImageObject"; }
+const char* ObjectGroup::get_typename() { return "ObjectGroup"; }
+const char* Map::get_typename() { return "Map"; }
