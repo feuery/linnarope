@@ -1,4 +1,4 @@
-#include "finrope.h"
+#include <finrope.h>
 #include <cassert>
 #include <cstring>
 #include <pugixml.hpp>
@@ -13,6 +13,7 @@
 #include <sqlite3.h>
 #include <swank.h>
 #include <project.h>
+#include <lib_fixup.h>
 
 Script::Script(Script &scr) : name(scr.name), script(scr.script) {}
 Script::Script(std::string &nme, std::string &scr): name(nme), script(scr) {}
@@ -145,118 +146,6 @@ std::vector<std::vector<Tile>> parse_layer_csv_data(const char *csv_data,
   return map;
 }
 
-SDL_Surface* Tileset::tileAt(int x, int y) {
-  // wonder if these x/y should be the other way around
-  return tile_surfaces.at(x).at(y);
-}
-
-SDL_Surface* Tileset::tileAt(int local_id) {
-  return linear_tile_surfaces.at(local_id);
-}
-
-std::tuple<int, const void*> Tileset::load_img_binary(sqlite3* db, std::string &image_filename) {
-  sqlite3_stmt *stmt;
-  std::string q = "SELECT img FROM image_file WHERE filename = ?";
-  int result = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
-  assert(result == SQLITE_OK);
-
-  sqlite3_bind_text(stmt, 1, image_filename.c_str(), image_filename.size(), SQLITE_STATIC);
-  result = sqlite3_step(stmt);
-  assert (result == SQLITE_ROW);
-
-  const void* blob = sqlite3_column_blob(stmt, 0);
-  int _sizeof = sqlite3_column_bytes(stmt, 0);
-
-  assert(_sizeof > 0);
-
-  sqlite3_finalize(stmt);
-
-  return {_sizeof, blob};
-}
-
-void* cpy (const void* ptr, int size) {
-  unsigned char *bfr = new unsigned char[size];
-
-  for(int i=0; i < size; i++) {
-    (*(bfr + i)) = (*(reinterpret_cast<const unsigned char*>(ptr) + i));
-  }
-
-  return bfr;
-}
-
-void Tileset::load_source(sqlite3 *db, std::string &document) {
-  pugi::xml_document tsx;
-  auto result = tsx.load_string(document.c_str());
-
-  if(! result) {
-    printf("Loading a tileset source from \"%s\" failed \n", document.c_str());
-    throw "";
-  }
-
-  auto tileset_el = tsx.child("tileset");
-
-  tilewidth = tileset_el.attribute("tilewidth").as_int();
-  tileheight = tileset_el.attribute("tileheight").as_int();
-  tilecount = tileset_el.attribute("tilecount").as_int();
-  columns = tileset_el.attribute("columns").as_int();
-
-  auto image_el = tileset_el.child("image");
-    
-  std::string imgsource = image_el.attribute("source").as_string();
-  assert(imgsource != "");
-
-  auto [img_size, img_data] = load_img_binary(db, imgsource);
-
-  assert(img_size > 0);
-  
-  // let's cast the const out of void 
-  void *bfr = cpy(img_data, img_size);
-
-  assert(bfr);
-
-  printf("trying to load %s\n", imgsource.c_str());
-
-  SDL_RWops *ops = SDL_RWFromMem(bfr, img_size);
-
-  if(!ops) {
-    printf("ops failed %s\n", SDL_GetError());
-    throw "";
-  }
-  
-  src_surface = IMG_Load_RW(ops, 1);
-  if(!src_surface) {
-    printf("IMG_Load_RW failed %s\n", SDL_GetError());
-    throw "";
-  }
-    
-  delete[] (reinterpret_cast<unsigned char*>(bfr));
-  
-  assert(src_surface);
-
-  for(SDL_Surface *s: linear_tile_surfaces) {
-    SDL_FreeSurface (s);
-  }
-    
-  tile_surfaces.clear();
-  linear_tile_surfaces.clear();
-
-  for(int y = 0; y < src_surface->h / tileheight; y++) {
-    std::vector<SDL_Surface*> row;
-    for(int x = 0; x < src_surface->w / tilewidth; x++) {
-      SDL_Surface *a_tile = SDL_CreateRGBSurface(0, tilewidth, tileheight, 32,
-						 src_surface->format->Rmask,
-						 src_surface->format->Gmask,
-						 src_surface->format->Bmask,
-						 src_surface->format->Amask);
-      SDL_Rect src_rect { x * tilewidth, y * tileheight, tilewidth, tileheight};
-      SDL_BlitSurface(src_surface, &src_rect, a_tile, nullptr);
-      row.push_back(a_tile);
-      linear_tile_surfaces.push_back(a_tile);
-    }
-    tile_surfaces.push_back(row);
-  }
-}
-
 int tmxpath_to_id(const char *path, sqlite3 *db) {
   sqlite3_stmt *stmt;
   sqlite3_prepare(db, "SELECT ID FROM Map WHERE tmx_path = ?", -1, &stmt, nullptr);
@@ -373,40 +262,32 @@ Project* read_project(const char *path) {
   return project;
 }
 
- void Tileset::load_tsx_contents(sqlite3 *db) {
-   sqlite3_stmt *stmt;
-   std::string q = "SELECT tsx_contents FROM tileset WHERE filename = ?";
-   int res = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+void Map::loadTilesets(const char *basepath) {
+  for(auto &tset: tilesets) {
+    tset->populate_tileset(basepath);
+  }
+}
 
-   if (res != SQLITE_OK) {
-     printf("Load tsx_contents failed %s\n", sqlite3_errmsg(db));
-     throw "";
-   }
+void Map::loadTilesets(sqlite3 *db) {
+  printf("Found %zu tilesets to populate \n", tilesets.size());
+  for(auto &tset: tilesets) {
+    printf("Addr of tileset being populated %p\n", tset);
+    tset->populate_tileset(db);
+  }
+}
 
-   sqlite3_bind_text(stmt, 1, source_attribute, -1, SQLITE_STATIC);
-
-   res = sqlite3_step(stmt);
-   assert(res == SQLITE_ROW);
-
-   this->tsx_contents = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-   sqlite3_finalize(stmt);
- }
-
-
-std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj) {
+Map tmx_to_map(const char *tmx_data) {
   assert(tmx_data);
   pugi::xml_document doc;
   pugi::xml_parse_result result = doc.load_string(tmx_data);  
 
   if(!result) {
     fprintf(stderr, "Couldn't load map\n");
-    return false;
+    throw "";
   }
-
   auto map_element = doc.child("map");
   Map m;
-
-  m.databaseID = map_id;
+  
   m.version = map_element.attribute("version").as_double();
 
   m.tiledversion = map_element.attribute("tiledversion").as_string();
@@ -425,25 +306,15 @@ std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<
   m.rendered_map = nullptr;
   m.rendered_map_tex = nullptr;
 
-  try {
-    m.entry_script_id = std::get<int>(entry_script_id);
-    m.entry_script_found = true;
-    printf("Entry script %d found\n", m.entry_script_id);
-  }
-  catch(const std::bad_variant_access& ex) {
-    puts("Entry script not found, was probably null in sqlite\n");
-    m.entry_script_found = false;
-  }
-
   auto tilesets = map_element.children("tileset");
 
   for(auto &tileset_element: tilesets) {
     Tileset *t = new Tileset;
+    printf("Addr of tileset: %p\n", t);
     t->firstgid = tileset_element.attribute("firstgid").as_int();
     t->source_attribute = tileset_element.attribute("source").as_string();
+    printf("Read a tileset source attribute as %s\n", t->source_attribute.c_str());
     t->name = tileset_element.attribute("name").as_string();
-    t->load_tsx_contents(db);
-    t->load_source(db, t->tsx_contents);
     m.tilesets.push_back(t);
   }
 
@@ -517,8 +388,54 @@ std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<
 	io->gid = obj.attribute("gid").as_int();
       }
 
-      if(ellipse && db) {
-	EllipseObject *eo = static_cast<EllipseObject*>(o);
+      ogroup.objs.push_back(o);
+      m.objs.push_back(ogroup);
+    }
+  }
+
+  if (m.infinite) {
+
+    // we don't actually support infinite maps, so... hopefully this works :D
+      
+    std::vector<int> xs, ys;
+    for(auto &l: m.layers)
+      for(auto &c: l.chunks) {
+	xs.push_back(c.x);
+	xs.push_back(c.x + c.width);
+
+	ys.push_back(c.y);
+	ys.push_back(c.y + c.height);
+      }
+
+    auto horizontal = std::ranges::minmax(xs),
+      vertical = std::ranges::minmax(ys);
+
+    m.width = horizontal.max - horizontal.min;
+    m.height = vertical.max - horizontal.min;      
+  }
+
+  return m;
+}
+
+Map& enrich_map (Map& m, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj) {
+  m.databaseID = map_id;
+    
+  try {
+    m.entry_script_id = std::get<int>(entry_script_id);
+    m.entry_script_found = true;
+    printf("Entry script %d found\n", m.entry_script_id);
+  }
+  catch(const std::bad_variant_access& ex) {
+    puts("Entry script not found, was probably null in sqlite\n");
+    m.entry_script_found = false;
+  }
+
+  m.loadTilesets(db);
+
+  for(auto& ogroup: m.objs) {
+    for (auto& obj: ogroup.objs) {
+      if (obj->get_typename() == std::string("EllipseObject")) {
+ 	EllipseObject *eo = static_cast<EllipseObject*>(obj);
 		
 	// mapid is generated by sqlite, and there is nothing more unique to be generated from a map other than it's path
 	// which should probably be set up as UNIQUE in sqlite too...
@@ -573,37 +490,16 @@ WHERE wc.src_map = ? AND src_o.id = ?", -1, &stmt, nullptr);
 	printf("Loaded %d child maps\n", count_of_kids);
 	sqlite3_finalize(stmt);
       }
-
-      ogroup.objs.push_back(o);
-      m.objs.push_back(ogroup);
     }
   }
-
-  if (m.infinite) {
-
-    // we don't actually support infinite maps, so... hopefully this works :D
-      
-    std::vector<int> xs, ys;
-    for(auto &l: m.layers)
-      for(auto &c: l.chunks) {
-	xs.push_back(c.x);
-	xs.push_back(c.x + c.width);
-
-	ys.push_back(c.y);
-	ys.push_back(c.y + c.height);
-      }
-
-    auto horizontal = std::ranges::minmax(xs),
-      vertical = std::ranges::minmax(ys);
-
-    m.width = horizontal.max - horizontal.min;
-    m.height = vertical.max - horizontal.min;      
-  }
-    
   return m;
 }
 
-Tileset::~Tileset() {
+
+std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj) {  
+  Map m = tmx_to_map(tmx_data);
+  m = enrich_map(m, map_id, entry_script_id, db, proj);    
+  return m;
 }
 
 Map::~Map() {
@@ -853,7 +749,6 @@ void Map::render_to_screen(int x, int y)
 
 const char* Script::get_typename() { return "Script"; }
 const char* Tile::get_typename() { return "Tile"; }
-const char* Tileset::get_typename() { return "Tileset"; }
 const char* LayerChunk::get_typename() { return "LayerChunk"; }
 const char* Layer::get_typename() { return "Layer"; }
 const char* EllipseObject::get_typename() { return "EllipseObject"; }

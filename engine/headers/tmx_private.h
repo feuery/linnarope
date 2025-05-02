@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <SDL.h>
 
@@ -39,17 +40,42 @@ private: Tile ();
 };
 
 class Tileset: public Resource {
+private:
+  bool load_xml(std::string& doc);
+  bool load_images(const char *basepath);
+  bool load_images(sqlite3*);
+  bool generate_tile_surfaces();
+
+  // source attribute of a <tileset>'s hopefully only <image> tag
+  std::string imgsource;
+  
 public:
   int firstgid;
-  const char *name, *source_attribute;
 
-  std::string tsx_contents;
+  // source_attribute is tsx's filename in tmx
+  std::string source_attribute;
+  const char *name;
 
   const char* get_typename() override;
-  
+
+  /*
+  // slurps tsx from disk into tsx_contents 
   void load_tsx_contents(sqlite3 *db);
-  void load_source(sqlite3 *db, std::string &document);
-  std::tuple<int, const void*> load_img_binary(sqlite3* db, std::string &image_filename);
+  // same 
+  void load_tsx_contents(const char *basepath);
+  // tsx_contents => populated fields 
+  void load_source(std::string &document);
+  // load the texture and generate SDL stuff based on previously loaded stuff
+  void enrich(sqlite3*);
+  */
+
+  bool populate_tileset(sqlite3 *);
+  bool populate_tileset(const char* basepath);
+
+  
+  // std::tuple<int, const void *> load_img_binary(sqlite3 *db,
+  //                                               std::string &image_filename);
+  // std::tuple<int, const void*> load_img_binary(std::string &image_filename);
 
   int tilewidth, tileheight, tilecount, columns;
 
@@ -182,7 +208,13 @@ public:
   const char* get_typename() override;
   void render_to_screen(int x, int y) override;
 
+  // these loop tilesets through and load corresponding tsx and render them from either db or fs
+  void loadTilesets(sqlite3*);
+  void loadTilesets(const char *basepath);
+
   virtual ~Map();
 };
 
 std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj);
+// used in maprenderer tasks 
+Map tmx_to_map(const char *tmx_data);
