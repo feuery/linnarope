@@ -15,25 +15,23 @@ char* unconst_str(const char *string, int bytes) {
 }
 
 void SingleMapRenderer::do_it() {
+  printf("Rendering a single map into %s\n", png_output_file.c_str());
+  SDL_Window *w = createWindow(true);
+  SDL_Renderer *r = createRenderer(w);
 
-    SDL_Window *w = createWindow(true);
-    SDL_Renderer *r = createRenderer(w);
-
-    std::string map_contents = get_file_contents(map_file.c_str());
+  std::string map_contents = get_file_contents(map_file.c_str());
     
-    Map m = tmx_to_map(map_contents.c_str());
-    render_map(&m, r);
+  Map m = tmx_to_map(map_contents.c_str());
+  char *filenme = unconst_str(map_file.c_str(), map_file.size());
 
-    char *filenme = unconst_str(map_file.c_str(), map_file.size());
+  const char *basepath = dirname(filenme);
 
-    const char *basepath = dirname(filenme);
-
-    delete [] filenme;
+  delete [] filenme;
     
-    m.loadTilesets(basepath);
+  m.loadTilesets(basepath);
+  render_map(&m, r);
 
-    IMG_SavePNG(m.rendered_map, png_output_file.c_str());
+  IMG_SavePNG(m.rendered_map, png_output_file.c_str());
 
-    printf("Saved %s as %s\n", map_file.c_str(), png_output_file.c_str());
-
+  printf("Saved %s as %s\n", map_file.c_str(), png_output_file.c_str());
 }

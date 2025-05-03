@@ -58,17 +58,6 @@ public:
 
   const char* get_typename() override;
 
-  /*
-  // slurps tsx from disk into tsx_contents 
-  void load_tsx_contents(sqlite3 *db);
-  // same 
-  void load_tsx_contents(const char *basepath);
-  // tsx_contents => populated fields 
-  void load_source(std::string &document);
-  // load the texture and generate SDL stuff based on previously loaded stuff
-  void enrich(sqlite3*);
-  */
-
   bool populate_tileset(sqlite3 *);
   bool populate_tileset(const char* basepath);
 

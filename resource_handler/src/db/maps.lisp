@@ -21,8 +21,11 @@
 
 ;; (uiop:pathname-directory-pathname tmx-path)
 (defun generate-png (tmx-path)
-  (sb-ext:run-program *engine-binary-location*
-		      (list "--map-file" tmx-path "--png-output-file" (generate-png-filename tmx-path))))
+  (let ((path (format nil "~a --map-file ~a --png-output-file ~a" *engine-binary-location* tmx-path (generate-png-filename tmx-path))))
+    (format t "Running ~a~%" path)
+    (sb-ext:run-program *engine-binary-location*
+			(list "--map-file" tmx-path "--png-output-file" (generate-png-filename tmx-path))
+			:output t)))
 
 (defvar *whole-map-png-location* (format nil "~awhole-map.resource-handler.png"
 					 (uiop:pathname-parent-directory-pathname
@@ -32,7 +35,8 @@
   "Generates the whole-map.png using engine and returns when it's done"
   (sb-ext:run-program *engine-binary-location*
 		      (list "--png-output-file" *whole-map-png-location*
-			    "--whole-map" *database-name*)))
+			    "--whole-map" *database-name*)
+		      :output t))
 
 (defun get-alist (alist key &key (expected-type :string))
   (let ((v (assoc key alist :test 'equalp)))

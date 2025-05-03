@@ -510,7 +510,10 @@ void delete_map(Map *m) {
 }
 
 void Map::renderMap(SDL_Renderer *r) {
-  // yolo what a deref 
+  // yolo what a deref
+  assert(!tilesets.empty());
+  assert(!tilesets.at(0)->linear_tile_surfaces.empty());
+  
   auto format = tilesets.at(0)->linear_tile_surfaces.at(0)->format;
     
   std::vector<int> xs, ys;
