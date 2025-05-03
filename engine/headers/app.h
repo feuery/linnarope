@@ -41,3 +41,20 @@ public:
     
   void do_it() override;
 };
+
+class ScriptExport: public App {
+  std::string dst_directory, project_path;
+  
+public:
+
+  ScriptExport(std::string project_path, std::string dst_dir);
+  void do_it() override;
+};
+
+class ScriptImport: public App {
+  std::string src_dir, project_path;
+public:
+
+  ScriptImport(std::string project_path, std::string src_dir);
+  void do_it() override;
+};

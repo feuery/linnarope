@@ -31,17 +31,20 @@ App* getApp (int argc, char **argv) {
     // used when transforming a whole shitload of maps into a png 
     {"whole-map", required_argument, nullptr, 'w'},
     {"game", required_argument, nullptr, 'g'},
+    {"export-script-to", required_argument, nullptr, 'e'},
+    {"import-scripts-from", required_argument, nullptr, 'i'},
     { nullptr, 0, nullptr, 0}};
 
   std::string map = "",
     png = "",
     wholemaps_sourcedb_path = "",
-    game = "";
+    game = "",
+    export_dst_dir = "",
+    import_src_dir = "";
 
   App *app = nullptr;
   
-
-  while ((c = getopt_long(argc, argv, "m:p:w:", opts, nullptr)) != -1) {
+  while ((c = getopt_long(argc, argv, "m:p:w:g:e:", opts, nullptr)) != -1) {
     switch(c) {
     case 'm':
       printf("map-file found %s\n", optarg);
@@ -59,10 +62,24 @@ App* getApp (int argc, char **argv) {
       printf("Reading game from sqlite db %s\n", optarg);
       game = std::string(optarg);
       break;
+    case 'e':
+      printf("Exporting scripts to %s\n", optarg);
+      export_dst_dir = std::string(optarg);
+      break;
+    case 'i':
+      printf("Importing scripts from %s\n", optarg);
+      import_src_dir = std::string(optarg);
+      break;
     }
   }
 
-  if (game != "") {
+  if (game != "" && export_dst_dir == "" && import_src_dir != "") {
+    app = new ScriptImport(game, import_src_dir);
+  }
+  else if (game != "" && export_dst_dir != "" && import_src_dir == "") {
+    app = new ScriptExport(game, export_dst_dir);
+  }
+  else if (game != "" && export_dst_dir == "") {
     app = new Game(game);
   }
   else if (wholemaps_sourcedb_path != "" && png != "") {
@@ -71,6 +88,7 @@ App* getApp (int argc, char **argv) {
   else if (map != "" && png != "") {
     app = new SingleMapRenderer(map, png);
   }
+  else throw "Unknown app state";
 
   assert(app);
 

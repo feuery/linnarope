@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <tmx_private.h>
 #include <lisp_sprite.h>
+#include <vector>
 
 class Project {
 private:
@@ -12,6 +13,9 @@ private:
   std::unordered_map<int, Script*> id_to_scripts;
   
 public:
+
+  std::vector<Script*>& get_scripts();
+  
   std::unordered_map<std::string, Map> maps;
   
   std::unordered_map<std::string, Lisp_sprite> lisp_sprites;
