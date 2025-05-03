@@ -126,14 +126,14 @@
   (let* ((q (case kind
 	      (:unpopulated "SELECT o.id, o.name, o.x, o.y
 FROM object o
-JOIN objectgroup og ON og.id = o.group_id
+JOIN objectgroup og ON og.internal_id = o.group_id
 WHERE og.map_id = $1
       AND warp_zone
       AND NOT EXISTS (SELECT * FROM warp_connection WHERE src_map = og.map_id and src_warpzone = o.internal_id)")
 	      
 	      (:populated "SELECT o.id, o.name, o.x, o.y, wc.dst_map as \"dst-map-id\"
 FROM object o
-JOIN objectgroup og ON og.id = o.group_id
+JOIN objectgroup og ON og.internal_id = o.group_id
 JOIN warp_connection wc ON wc.src_warpzone = o.internal_id AND wc.src_map = og.map_id
 WHERE og.map_id = $1
       AND warp_zone"))))

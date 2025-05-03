@@ -4,6 +4,7 @@
   (:import-from :cl-hash-util :with-keys :hash)
   (:import-from :linnarope.migrations :*tables*)
   (:import-from :easy-routes :defroute)
+  (:export :export-project)
   (:local-nicknames (:jzon :com.inuoe.jzon)))
 
 (in-package :linnarope.views.export)
@@ -25,18 +26,20 @@
 
 (defvar *exporter-bin-path* (pathname (format nil "~aexporter/exporter" (asdf:system-source-directory "linnarope-resource-handler"))))
 
+(defun export-project (dst-path)
+  (format t "Running `~a ~a`~%" *exporter-bin-path* dst-path)
+
+  (sb-ext:run-program *exporter-bin-path* (list (format nil "~a" dst-path)) :output t)
+
+  (format nil "Game package should now exist in ~a" dst-path))
+  
 (defroute export-project-here ("/export-project-here" :method :get
 						      :decorators (@db))
     (&get path)
   (assert (cl-fad:file-exists-p *exporter-bin-path*))
   (let* ((zipfile-name "linnarope-export.game")
 	 (final-path (pathname (format nil "~a/~a" path zipfile-name))))
-
-    (format t "Running `~a ~a`~%" *exporter-bin-path* final-path)
-
-    (sb-ext:run-program *exporter-bin-path* (list (format nil "~a" final-path)) :output t)
-
-    (format nil "Game package should now exist in ~a" final-path)))
+    (export-project final-path)))
 
 (defsubtab (import-project-browser "/import-project" "import-project-browser.html" export-things) () (&get path)
   (let ((path (or path (asdf:system-source-directory "linnarope-resource-handler"))))

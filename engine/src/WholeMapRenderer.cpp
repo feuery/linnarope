@@ -45,12 +45,24 @@ void WholeMapRenderer::do_it() {
 
     Project *proj = read_project(sqlite_path.c_str());
 
-    Map &initial_map = (*proj->maps.begin()).second;
-    
+    Map *initial_map = nullptr;
+
+    for(auto& pair: proj->maps) {
+      Map& m = pair.second;
+      if(m.warpzones.empty()) continue;
+      
+      initial_map = &m;
+      break;
+    }
+
+    if(!initial_map) {
+      puts("Didn't find a suitable starting map with warpzones\n");
+      return;
+    }
     
     drawing_state *ctx = start_drawing();
 
-    generate_drawing_context(proj, &initial_map, ctx, r);
+    generate_drawing_context(proj, initial_map, ctx, r);
 
     SDL_Surface *final_map = stop_drawing(ctx);
 
@@ -58,5 +70,4 @@ void WholeMapRenderer::do_it() {
 
     printf("Saved the whole map (%d x %d) to %s\n", final_map->w, final_map->h, png_output_file.c_str());
     SDL_FreeSurface(final_map);
-    
 }

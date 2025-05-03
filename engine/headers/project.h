@@ -21,4 +21,6 @@ public:
   void insertScript(int id, const char *name, Script scr);
   Script& getScript(const char *name);
   Script& getScript(int id);
+
+  bool hasScript(int id);
 };

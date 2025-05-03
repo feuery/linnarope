@@ -31,11 +31,16 @@
 					 (uiop:pathname-parent-directory-pathname
 					  (asdf:system-source-directory "linnarope-resource-handler"))))
 
-(defun generate-whole-map-png ()
+(defun generate-whole-map-png (export-path)
   "Generates the whole-map.png using engine and returns when it's done"
+  (format t "Generating entire map with: ~a --png-output-file ~a --whole-map ~a ~%"
+	  *engine-binary-location*
+	  *whole-map-png-location*
+	  export-path)
+  
   (sb-ext:run-program *engine-binary-location*
 		      (list "--png-output-file" *whole-map-png-location*
-			    "--whole-map" *database-name*)
+			    "--whole-map" export-path)
 		      :output t))
 
 (defun get-alist (alist key &key (expected-type :string))
@@ -201,7 +206,7 @@ VALUES
   (caar (postmodern:query "
 SELECT o.internal_id
 FROM object o
-JOIN objectgroup ogroup ON o.group_id = ogroup.ID 
+JOIN objectgroup ogroup ON o.group_id = ogroup.internal_id
 WHERE o.id = $1 and ogroup.map_id = $2" id map-id)))
 
 (defun insert-warp-connection (src-map-id src-warpzone-id dst-map-id dst-warpzone-id)

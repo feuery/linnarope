@@ -38,8 +38,8 @@
 		 (:module "views"
 		  :components ((:file "root")
 			       (:file "sprite")
-			       (:file "complete-map")
 			       (:file "export")
+			       (:file "complete-map")
 			       (:file "script")))
 		 (:module "routes"
 		  :components ((:file "sprite")))

@@ -186,6 +186,13 @@ void assign_entry_scripts(Project *proj) {
     Map &m = pair.second;
     if(!m.entry_script_found) continue;
 
+    printf("Found an entry script %d for map %s\n", m.entry_script_id, m.name.c_str());
+
+    if(!proj->hasScript(m.entry_script_id)) {
+      printf("Meanwhile project didn't contain script with id %d. Has sqlite or exporter broken?\n", m.entry_script_id);
+      continue;
+    }
+    
     Script &scr = proj->getScript(m.entry_script_id);    
     m.entry_script = &scr;
   }
@@ -447,12 +454,15 @@ Map& enrich_map (Map& m, int map_id, std::variant<int, bool> entry_script_id, sq
 	sqlite3_stmt *stmt;
 	
 	// a potential warpzone, let's see if sqlite knows of a destination map
-	sqlite3_prepare(db, "SELECT m.tmx_path, m.ID, o.x, o.y \
-FROM warp_connection wc \
-JOIN object o ON wc.dst_warpzone = o.internal_id \
-JOIN map m ON m.ID = wc.dst_map \
-JOIN object src_o ON wc.src_warpzone = src_o.internal_id \
-WHERE wc.src_map = ? AND src_o.id = ?", -1, &stmt, nullptr);
+
+	printf("Searching for warpid with params %d and %d\n", map_id, eo->id);
+	
+	sqlite3_prepare(db, R"(SELECT m.tmx_path, m.ID, o.x, o.y 
+FROM warp_connection wc 
+JOIN object o ON wc.dst_warpzone = o.internal_id 
+JOIN map m ON m.ID = wc.dst_map 
+JOIN object src_o ON wc.src_warpzone = src_o.internal_id 
+WHERE wc.src_map = ? AND src_o.id = ?)", -1, &stmt, nullptr);
         sqlite3_bind_int(stmt, 1, map_id);
         sqlite3_bind_int(stmt, 2, eo->id);
 
@@ -498,7 +508,7 @@ WHERE wc.src_map = ? AND src_o.id = ?", -1, &stmt, nullptr);
 
 std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj) {  
   Map m = tmx_to_map(tmx_data);
-  m = enrich_map(m, map_id, entry_script_id, db, proj);    
+  m = enrich_map(m, map_id, entry_script_id, db, proj);
   return m;
 }
 
