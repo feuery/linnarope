@@ -15,7 +15,7 @@ void register_callbacks() {
   DEFUN("setup-scene", setup_scene, 3);
   DEFUN("get-resource", get_resource, 2);
   DEFUN("render", render, 3);
-  DEFUN("lol", lol, 0);
+  DEFUN("change-map", change_map, 1);  
 }
 
 cl_object setup_scene(cl_object startup, cl_object update, cl_object teardown) {
@@ -53,6 +53,19 @@ cl_object render(cl_object handle, cl_object x_, cl_object y_) {
   Resource *resource = current_scene->handle_to_resource(handle_);  
 
   resource->render_to_screen(x, y);
+  
+  return ECL_NIL;
+}
+
+cl_object change_map(cl_object map_handle) {
+  assert(current_scene);
+  int handle_ = ecl_to_int(map_handle);
+  Resource *map = current_scene->handle_to_resource(handle_);
+
+  assert(std::string("Map") == map->get_typename());
+  Map *m = static_cast<Map*>(map);
+
+  current_scene->changeMap(m);
   
   return ECL_NIL;
 }

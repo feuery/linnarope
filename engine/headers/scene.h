@@ -17,6 +17,7 @@ class Scene {
   Project *proj;
   
   cl_object current_startup, current_update, current_teardown;
+  Map *current_map;
   
  public:
   Scene(Project *p);

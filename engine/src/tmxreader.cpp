@@ -199,6 +199,7 @@ void assign_entry_scripts(Project *proj) {
 }
 
 Project* read_project(const char *path) {
+  printf("Welcome to read_project(\"%s\")\n", path);
   sqlite3 *db = nullptr;
   Project *project = new Project;
 
@@ -733,6 +734,7 @@ void generate_drawing_context(Project *proj, Map *m, drawing_state *ctx, SDL_Ren
 
 void eval(Script* scr) {
   std::string form = "(progn " + scr->script + ")";
+  printf("Entry script is: %s\n", form.c_str());
   ecl_call(form.c_str());
 }
 
@@ -741,7 +743,11 @@ void map_x(Map *m, int x) { m->x = x; }
 void map_y(Map *m, int y) { m->y = y; }
 
 void eval_entry_script(Map *m) {
-  if(m->entry_script_found && m->entry_script) eval (m->entry_script);
+  if(m->entry_script_found && m->entry_script) {
+    puts("Evalling entry script\n");
+    eval (m->entry_script);
+  }
+  else puts("Didn't eval entry script\n");
 }
 
 void assert_map_makes_sense(Map* m) {

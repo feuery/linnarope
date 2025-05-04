@@ -80,6 +80,7 @@ App* getApp (int argc, char **argv) {
     app = new ScriptExport(game, export_dst_dir);
   }
   else if (game != "" && export_dst_dir == "") {
+    printf("Creating game app \"%s\"\n", game.c_str());
     app = new Game(game);
   }
   else if (wholemaps_sourcedb_path != "" && png != "") {

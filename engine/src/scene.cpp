@@ -1,3 +1,4 @@
+#include "ecl/ecl.h"
 #include <handle.h>
 #include <stdexcept>
 #include <string>
@@ -14,12 +15,29 @@ Scene::Scene(Project *p): proj(p),
 			  current_teardown(ECL_NIL)
 { }
 
-void Scene::changeMap(Map *m) {}
+void Scene::changeMap(Map *m){
 
-void Scene::update() {
+  if(current_teardown != ECL_NIL) {
+    cl_funcall(1, current_teardown);
+  }
   
+  current_startup = ECL_NIL;
+  current_update = ECL_NIL;
+  current_teardown = ECL_NIL;
+  
+  eval_entry_script(m);
+  current_map = m;
+
+  if (current_startup != ECL_NIL) {
+    cl_funcall(1, current_startup);
+  }
+}
+
+void Scene::update() {  
   if(this->current_update != ECL_NIL) {
-    cl_funcall(1, current_update);
+    int handle = toHandle(current_map);
+    cl_object handle_ = ecl_make_int(handle);
+    cl_funcall(2, current_update, handle_);
   }
 }
 
