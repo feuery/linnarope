@@ -13,10 +13,9 @@ bool import_warp_connections(pqxx::work &tx, sqlite3 *db) {
     return false;
   }
 
-  auto step_res = sqlite3_step(stmt);
-  assert(step_res != SQLITE_ERROR);
+  int step_res = 0;
 
-  do {
+  while ((step_res = sqlite3_step(stmt)) == SQLITE_ROW) {
     std::string psql_insert = "INSERT INTO warp_connection (internal_id, src_map, src_warpzone, dst_map, dst_warpzone) VALUES($1, $2, $3, $4, $5);";
 
     int internal_id = sqlite3_column_int(stmt, 0), 
@@ -33,9 +32,7 @@ bool import_warp_connections(pqxx::work &tx, sqlite3 *db) {
     p.append(dst_warpzone);
 
     tx.exec(psql_insert, p);
-
-    step_res = sqlite3_step(stmt);
-  } while (step_res == SQLITE_ROW);
+  }
 
   sqlite3_finalize(stmt);
   puts("import_warp_connections done\n");
@@ -188,15 +185,17 @@ bool import_images (pqxx::work &tx, sqlite3 *db) {
     std::string psql_insert = R"(
 INSERT INTO image_file (filename, img)
 VALUES ($1, $2))";
-    std::string filename = (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-    const char *file_data = reinterpret_cast<const char*>(sqlite3_column_blob(stmt, 2));
-    int size = sqlite3_column_bytes(stmt, 2);
-    std::string f;
-    f.assign(file_data, size);
+    std::string filename = (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+    const void *file_data = sqlite3_column_blob(stmt, 1);
+    int size = sqlite3_column_bytes(stmt, 1);
 
+    pqxx::binarystring bin(file_data, size);
+
+    printf("Inserting blob named %s\n", filename.c_str());
+    
     pqxx::params p;
     p.append(filename);
-    p.append(f);
+    p.append(bin);
 
     tx.exec(psql_insert, p);
   }
