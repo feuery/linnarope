@@ -4,7 +4,8 @@
   (:import-from :linnarope.middleware :defheaderbutton :list-all-js-resources :@db :@html :@css :deftab :defsubtab)
   (:import-from :easy-routes :defroute)
   (:import-from :lisp-fixup :filename :with-output-to-real-string)
-  (:local-nicknames (:palette-db :linnarope.db.palettes)))
+  (:local-nicknames (:palette-db :linnarope.db.palettes)
+		    (:script-db :linnarope.db.scripts)))
 
 (in-package :linnarope.views.root)
 
@@ -141,9 +142,18 @@ WHERE og.map_id = $1
     (postmodern:query q map-id :alists)))
 
 (defsubtab (current-map "/map/:id" "current_map.html" maps) () ()
-  (let ((warpzone-objects (get-warpzone-objects id))
-	(populated-warpzones (get-warpzone-objects id :populated)))
+  (let* ((warpzone-objects (get-warpzone-objects id))
+	 (entry-script (caar (postmodern:query "SELECT entry_script FROM map WHERE id = $1" id)))
+	 (populated-warpzones (get-warpzone-objects id :populated))
+	 (scripts (map 'list
+		       (lambda (script)
+			 (let ((id (cdr (assoc :id script))))
+			   (cons `(:selected . ,(equalp id entry-script))
+				 script)))
+		       (script-db:all-scripts))))
+    
     `((:map-id . ,id)
+      (:scripts . ,scripts)
       (:warpzone-objects . ,warpzone-objects)
       (:populated-warpzones . ,populated-warpzones))))
 
@@ -199,6 +209,15 @@ WHERE og.map_id = $1
   (assert dst-warpzone-id)
   (linnarope.db.maps:insert-warp-connection src-map-id src-warpzone-id dst-map-id dst-warpzone-id)
   (easy-routes:redirect 'maps))
+
+(defroute entryscript-setter ("/map/:id/set_entry_script/:script-id"
+			      :method :get
+			      :decorators (@db)) ()
+  (let ((script-id (if (equalp script-id "null")
+		       :null
+		       script-id)))
+    (postmodern:execute "UPDATE map SET entry_script = $1 WHERE id = $2" script-id id)
+    ""))
 
 (defun read-arrayed-form ()
   "Tries to read multipart-less POSTed form into a hashtable that contains form-value[]s correctly as lists under the key \"form-value\""

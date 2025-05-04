@@ -33,6 +33,7 @@
 		 (:file "tsxreader")
 		 (:module "db"
 		  :components ((:file "maps")
+			       (:file "scripts")
 			       (:file "sprites")
 			       (:file "palettes")))
 		 (:module "views"

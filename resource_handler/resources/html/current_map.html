@@ -8,7 +8,30 @@
       if (response.ok) { location.reload(); }
       else alert(response.status + " " + response.statusText + " " + response.text());			 
   }
+
+  window.addEventListener('DOMContentLoaded', _ => {
+      document.querySelector('#entry_script').addEventListener('input', 
+							       async function (e) {
+								   let data = e.target.value;
+
+								   if (data == "") data = "null";
+
+								   let response = await fetch(`/map/{{map-id}}/set_entry_script/${data}`);
+								   if(response.ok) { location.reload();}
+								   else alert(response.status + " " + response.statusText + " " + response.text());
+							       });
+  });
 </script>
+
+
+<label> Script that's ran as this map is entered into
+  <select name="entry_script" id="entry_script">
+    <option value="">--</option>
+    {{#scripts}}
+    <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+    {{/scripts}}
+  </select>
+</label>
 
 <div class="map-container">
   <img src="/map/{{map-id}}/img" />
@@ -25,5 +48,5 @@
     
     <button onclick="removeConnection({{map-id}}, {{id}})">Remove this connection</button>
   </div>
-  {{/populated-warpzones}}    
+  {{/populated-warpzones}}
 </div>
