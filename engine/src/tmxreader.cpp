@@ -1,3 +1,6 @@
+#include "SDL_rwops.h"
+#include "SDL_surface.h"
+#include "lisp_sprite.h"
 #include <finrope.h>
 #include <cassert>
 #include <cstring>
@@ -198,6 +201,47 @@ void assign_entry_scripts(Project *proj) {
   }
 }
 
+void read_sprites(Project *project, sqlite3 *db) {
+  std::string q = "SELECT name, data FROM sprite";
+  sqlite3_stmt *stmt = nullptr;
+  auto result = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+
+  if(result != SQLITE_OK) {
+    printf("Read sprites failed %s\n", sqlite3_errmsg(db));
+    throw "";
+  }
+
+  while((result = sqlite3_step(stmt)) == SQLITE_ROW) {
+    std::string nme(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+
+    const void* blob = sqlite3_column_blob(stmt, 1);
+    int blobsize = sqlite3_column_bytes(stmt, 1);
+
+    void* our_blob = cpy(blob, blobsize);
+
+    printf("Trying to load sprite %s\n", nme.c_str());
+
+    SDL_RWops *ops = SDL_RWFromMem(our_blob, blobsize);
+
+    if(!ops) {
+      printf("ops failed %s\n", SDL_GetError());
+      throw "";
+    }
+
+    SDL_Surface *srfc = IMG_Load_RW(ops, 1);
+
+    if(!srfc) {
+      printf("IMG_Load_RW failed %s\n", SDL_GetError());
+      throw "";
+    }
+    delete_cpyed(our_blob);
+
+    project->sprites[nme] = Sprite(nme, srfc);      
+  }
+
+  sqlite3_finalize(stmt);
+}
+
 Project* read_project(const char *path) {
   printf("Welcome to read_project(\"%s\")\n", path);
   sqlite3 *db = nullptr;
@@ -263,6 +307,7 @@ Project* read_project(const char *path) {
 
   read_scripts(project, db);
   assign_entry_scripts(project);
+  read_sprites(project, db);
 
   sqlite3_finalize(stmt);
   sqlite3_close_v2(db);

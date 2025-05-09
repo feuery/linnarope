@@ -1,5 +1,29 @@
+#include <SDL_rect.h>
+#include <SDL_render.h>
+#include <finrope.h>
+#include <cassert>
+#include <cstddef>
 #include <lisp_sprite.h>
 
 const char *Lisp_sprite::get_typename() { return "Lisp sprite"; }
 const char *Sprite::get_typename() { return "Sprite"; }
 const char* Palette::get_typename() { return "Palette"; }
+
+Sprite::Sprite(std::string nme, SDL_Surface *sprite): nme(nme), srfc(sprite), txt(nullptr) {
+  assert(current_renderer);
+  txt = SDL_CreateTextureFromSurface(current_renderer, srfc);
+}
+Sprite::Sprite(Sprite& spr) {
+  this->nme = spr.nme;
+  this->srfc = spr.srfc;
+  this->txt = spr.txt;
+}
+
+Sprite::Sprite() {}
+
+void Sprite::render_to_screen(int x, int y) {
+  assert(current_renderer);
+  assert(txt);
+  SDL_Rect loc = {x, y, srfc->w, srfc->h};
+  SDL_RenderCopy(current_renderer, txt, nullptr, &loc);
+}

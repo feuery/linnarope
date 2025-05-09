@@ -207,3 +207,8 @@ public:
 std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj);
 // used in maprenderer tasks 
 Map tmx_to_map(const char *tmx_data);
+
+
+// takes the const out of void* returned by sqlite. 
+void* cpy (const void* ptr, int size);
+void delete_cpyed(void *bfr);

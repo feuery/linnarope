@@ -6,6 +6,11 @@
 #include <SDL_image.h>
 
 std::tuple<int, const void*> load_img_binary(sqlite3* db, std::string &image_filename);
+
+void delete_cpyed(void *bfr) {
+  delete[] (reinterpret_cast<unsigned char*>(bfr));
+}
+  
 void* cpy (const void* ptr, int size) {
   unsigned char *bfr = new unsigned char[size];
 
@@ -50,7 +55,7 @@ bool Tileset::load_images(sqlite3 *db) {
     return false;
   }
     
-  delete[] (reinterpret_cast<unsigned char*>(bfr));
+  delete_cpyed(bfr);
 
   return generate_tile_surfaces();
 }
