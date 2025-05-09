@@ -450,13 +450,9 @@ Map& enrich_map (Map& m, int map_id, std::variant<int, bool> entry_script_id, sq
 	int map_id = m.databaseID;
 	assert(map_id>=0);
 
-	printf("map id %d, o id %d\n", map_id, eo->id);
-
 	sqlite3_stmt *stmt;
 	
 	// a potential warpzone, let's see if sqlite knows of a destination map
-
-	printf("Searching for warpid with params %d and %d\n", map_id, eo->id);
 	
 	sqlite3_prepare(db, R"(SELECT m.tmx_path, m.ID, o.x, o.y 
 FROM warp_connection wc 
@@ -467,20 +463,11 @@ WHERE wc.src_map = ? AND src_o.id = ?)", -1, &stmt, nullptr);
         sqlite3_bind_int(stmt, 1, map_id);
         sqlite3_bind_int(stmt, 2, eo->id);
 
-	printf("Loading with eo->id of %d\n", eo->id);
-
-	int count_of_kids = 0;
-
 	auto step_result = sqlite3_step(stmt);
-	printf("step_result: %d\n", step_result);
 	while(step_result == SQLITE_ROW) {	  
 	  int dst_map_id = sqlite3_column_int(stmt, 1),
 	    dst_x = sqlite3_column_int(stmt, 2),
 	    dst_y = sqlite3_column_int(stmt, 3);
-
-	  count_of_kids++;
-
-	  printf("dst_map id, x, y: %d, %d, %d\n", dst_map_id, dst_x, dst_y);
 
 	  auto c_tmxpath = sqlite3_column_text(stmt, 0);
 	  assert(c_tmxpath);
@@ -498,7 +485,6 @@ WHERE wc.src_map = ? AND src_o.id = ?)", -1, &stmt, nullptr);
 	  step_result = sqlite3_step(stmt);
 	}
 
-	printf("Loaded %d child maps\n", count_of_kids);
 	sqlite3_finalize(stmt);
       }
     }
