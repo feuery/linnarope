@@ -1,3 +1,4 @@
+#include "SDL_pixels.h"
 #include "ecl/ecl.h"
 #include <handle.h>
 #include <stdexcept>
@@ -61,10 +62,10 @@ int Scene::resource_to_handle(const char *typename_, const char *resourcename_) 
     r = &proj->getScript(resourcename.c_str());
   }
   else if (type == "Lisp sprite") {
-    r = &proj->lisp_sprites.at(resourcename);
+    r = &proj->getLisp_Sprite(resourcename.c_str());
   }
   else if (type == "Palette") {
-    r = &proj->palettes.at(resourcename);
+    r = &proj->getPalette(resourcename.c_str());
   }
   else if (type == "Sprite") {
     r = &proj->sprites.at(resourcename);
@@ -77,4 +78,9 @@ int Scene::resource_to_handle(const char *typename_, const char *resourcename_) 
 
 Resource* Scene::handle_to_resource(int hndl) {
   return fromHandle(hndl);
+}
+
+SDL_PixelFormat* Scene::currentFormat() {
+  assert(current_map);
+  return current_map->rendered_map->format;
 }

@@ -6,7 +6,7 @@ finropedemo : $(OBJECTS)
 
 # wonder if we could grep the dependent #include "headers.h" from the %.cpp
 $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
-	clang++ $< -Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/headers -I/usr/local/include -I/opt/homebrew/Cellar/sdl2_image/2.8.2_1/include/ $$(pkg-config --cflags sdl2_image) -I/opt/homebrew/Cellar/ecl/24.5.10/include
+	clang++ $< -Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/headers -I/usr/local/include -I/opt/homebrew/Cellar/sdl2_image/2.8.2_1/include/ $$(pkg-config --cflags sdl2_image) -I/opt/homebrew/Cellar/ecl/24.5.10/include $$(pkg-config nlohmann_json --cflags)
 
 # $< contains the matched file 
 

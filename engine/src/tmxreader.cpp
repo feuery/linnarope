@@ -1,6 +1,5 @@
-#include "SDL_rwops.h"
-#include "SDL_surface.h"
-#include "lisp_sprite.h"
+#include <lisp_sprite.h>
+#include <sprite.h>
 #include <finrope.h>
 #include <cassert>
 #include <cstring>
@@ -201,6 +200,87 @@ void assign_entry_scripts(Project *proj) {
   }
 }
 
+void read_palettes(Project *project, sqlite3 *db) {
+  std::string q = "SELECT name, color_array, id FROM palette";
+  sqlite3_stmt *stmt = nullptr;
+
+  auto result = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+
+  if(result != SQLITE_OK) {
+    printf("Read palettes failed %s\n", sqlite3_errmsg(db));
+    throw "";
+  }
+
+  while((result = sqlite3_step(stmt)) == SQLITE_ROW) {
+    std::string name (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+    std::string color_array (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+    int id = sqlite3_column_int(stmt, 2);
+    
+    project->insertPalette(id, name, Palette(name, color_array));
+  }
+
+  sqlite3_finalize(stmt);
+}
+
+void read_pixels(Lisp_sprite &sprite, sqlite3 *db) {
+  std::string pixel_q = "SELECT x, y, color_index FROM lisp_sprite_pixel WHERE sprite_id = ?";
+  sqlite3_stmt *stmt = nullptr;
+
+  auto result = sqlite3_prepare_v2(db, pixel_q.c_str(), pixel_q.size(), &stmt, nullptr);
+  if(result != SQLITE_OK) {
+    printf("Read pixels failed %s\n", sqlite3_errmsg(db));
+    throw "";
+  }
+
+  sqlite3_bind_int(stmt, 1, sprite.id);
+
+  int c = 0;
+  while((result = sqlite3_step(stmt)) == SQLITE_ROW) {
+    int x = sqlite3_column_int(stmt, 0),
+      y = sqlite3_column_int(stmt, 1),
+      color_index = sqlite3_column_int(stmt, 2);
+
+    sprite.pixels[x][y] = color_index;
+    c++;
+  }
+
+  printf("Read %d pixels\n", c);
+
+  sqlite3_finalize(stmt);
+}
+
+void read_lisp_sprites(Project *project, sqlite3 *db) {
+  read_palettes(project, db);
+  
+  std::string q = "SELECT id, name, w, h, palette_id FROM lisp_sprite";
+    sqlite3_stmt *stmt = nullptr;
+
+  auto result = sqlite3_prepare_v2(db, q.c_str(), q.size(), &stmt, nullptr);
+
+  if(result != SQLITE_OK) {
+    printf("Read lisp_sprites failed %s\n", sqlite3_errmsg(db));
+    throw "";
+  }
+
+  while((result = sqlite3_step(stmt)) == SQLITE_ROW) {
+    int id = sqlite3_column_int(stmt, 0);
+    std::string name (reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+
+    int w = sqlite3_column_int(stmt, 2),
+      h = sqlite3_column_int(stmt, 3),
+      palette_id = sqlite3_column_int(stmt, 4);
+
+    Lisp_sprite sprite(id, name, w, h, project->getPalette(palette_id));
+    read_pixels(sprite, db);
+    
+    project->insertLisp_Sprite(id, name, sprite);
+
+    printf("Loaded lisp sprite %s\n", name.c_str());
+  }
+
+  sqlite3_finalize(stmt);
+}
+
 void read_sprites(Project *project, sqlite3 *db) {
   std::string q = "SELECT name, data FROM sprite";
   sqlite3_stmt *stmt = nullptr;
@@ -308,6 +388,7 @@ Project* read_project(const char *path) {
   read_scripts(project, db);
   assign_entry_scripts(project);
   read_sprites(project, db);
+  read_lisp_sprites(project, db);
 
   sqlite3_finalize(stmt);
   sqlite3_close_v2(db);

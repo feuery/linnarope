@@ -33,3 +33,34 @@ std::vector<Script*>& Project::get_scripts() {
 
   return vec;
 }
+
+void Project::insertPalette(int id, std::string name, Palette scr) {
+  palettes[name] = scr;
+  id_to_palettes[id] = &palettes[name];
+}
+
+Palette &Project::getPalette(const char *nme) {
+  assert(!palettes.empty());
+  return palettes.at(nme);
+}
+Palette &Project::getPalette(int id) {
+  assert(!id_to_palettes.empty());
+  Palette *scr = id_to_palettes.at(id);
+  return *scr;
+}
+
+
+void Project::insertLisp_Sprite(int id, std::string name, Lisp_sprite scr) {
+  lisp_sprites[name] = scr;
+  id_to_lisp_sprites[id] = &lisp_sprites[name];
+}
+
+Lisp_sprite &Project::getLisp_Sprite(const char *nme) {
+  assert(!lisp_sprites.empty());
+  return lisp_sprites.at(nme);
+}
+Lisp_sprite &Project::getLisp_Sprite(int id) {
+  assert(!id_to_lisp_sprites.empty());
+  Lisp_sprite *scr = id_to_lisp_sprites.at(id);
+  return *scr;
+}

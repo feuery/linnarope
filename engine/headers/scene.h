@@ -3,6 +3,7 @@
 #include <ecl/ecl.h>
 #include <tmxreader.h>
 #include <tmx_private.h>
+#include <SDL.h>
 
 
 /*
@@ -20,6 +21,7 @@ class Scene {
   Map *current_map;
   
  public:
+  SDL_PixelFormat* currentFormat();
   Scene(Project *p);
   void changeMap(Map *m);
   
