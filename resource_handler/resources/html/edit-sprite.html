@@ -1,271 +1,304 @@
 <script>
-
-  function getCursorPosition(event) {
-      let target = event.currentTarget;
-      
-      const rect = target.getBoundingClientRect()
-      const x = event.clientX - rect.left
-      const y = event.clientY - rect.top
-      return [x, y];
-  }
-  
-  function getCtx(id='#sprite_canvas') {
-      const canvas = document.querySelector(id);
-      if(!canvas.getContext) {
-	  alert('no getContext on canvas, please run a modern browser');
-	  return null;
-      }
-
-      return [canvas.getContext("2d"), canvas];
-  }
-  
-  // fucking hell this would be insecure in a real client/server env :D
-  let palette = {{colors}};
-  let pixels = {{pixels}};
-
-  // if true, canvas will render "full pixels" and resize itself in the way that one pixel actually is a pixel
+ function getCursorPosition(event) {
+     let target = event.currentTarget;
+     
+     const rect = target.getBoundingClientRect()
+     const x = event.clientX - rect.left
+     const y = event.clientY - rect.top
+     return [x, y];
+ }
+ 
+ function getCtx(id = '#sprite_canvas') {
+     const canvas = document.querySelector(id);
+     if (!canvas.getContext) {
+	 alert('no getContext on canvas, please run a modern browser');
+	 return null;
+     }
+     
+     return [canvas.getContext("2d"), canvas];
+ }
+ 
+ // fucking hell this would be insecure in a real client/server env :D
+ let palette = {{ colors }};
+ let pixels = {{ pixels }};
+ 
+ // if true, canvas will render "full pixels" and resize itself in the way that one pixel actually is a pixel
  let showfinal = false;
  let shrank = false;
-  
-  function pixels_to_2d(pix) {
-      let keys = Object.keys(pix);
-      let acc = []
-      let n = keys.length;
-      for(let i=0; i < n; i++)
-      {
-	  let v = pix[i.toString()];
-	  if((typeof v) != "number") {
-	      v = pixels_to_2d(v);
-	  }
-
-	  acc.push(v);
-      }
-      return acc;
-  }
-
-  let real_pixels = pixels_to_2d(pixels);
-  let background_color = "#FF0000";
-
+ 
+ function pixels_to_2d(pix) {
+     let keys = Object.keys(pix);
+     let acc = []
+     let n = keys.length;
+     for (let i = 0; i < n; i++) {
+	 let v = pix[i.toString()];
+	 if ((typeof v) != "number") {
+	     v = pixels_to_2d(v);
+	 }
+	 
+	 acc.push(v);
+     }
+     return acc;
+ }
+ 
+ let real_pixels = pixels_to_2d(pixels);
+ let background_color = "#FF0000";
+ 
  function pixels_w() {
      return real_pixels[0].length;
  }
-
+ 
  function pixels_h() {
      return real_pixels.length;
  }
  
+ 
+ function draw(canvas, ctx, pix_w, pix_h) {
+     console.assert(ctx);
+     
+     ctx.fillStyle = background_color;
+     ctx.fillRect(0, 0, canvas.width, canvas.height);
+     
+     const w = real_pixels[0].length,
+	   h = real_pixels.length;
+     
+     console.log(`size is ${w}, ${h}`);
+     
+     for (let y = 0; y < h; y++) {
+	 for (let x = 0; x < w; x++) {
+	     let index = real_pixels[y][x];
+	     let color = palette[index];
+	     
+	     ctx.fillStyle = color;
+	     if (showfinal) {
+		 ctx.fillRect(x * pix_w, y * pix_h, pix_w, pix_h);
+	     }
+	     else ctx.fillRect(x * pix_w + 5, y * pix_h + 5, pix_w - 10, pix_h - 10);
+	 }
+     }
+ }
+ 
+ // const palette_columns = 1;
+ 
+ function palette_color_h() {
+     let [_, canvas] = getCtx('#chosen-palette');
+     return canvas.height / palette.length;
+ }
+ function drawPalette() {
+     let [ctx, canvas] = getCtx('#chosen-palette');
+     ctx.fillStyle = '#000';
+     ctx.fillRect(0, 0, canvas.width, canvas.height);
+     
+     const rect_h = palette_color_h();
+     
+     for (let y = 0; y < palette.length; y++) {
+	 let color = palette[y];
+	 ctx.fillStyle = color;
+	 ctx.fillRect(0, y * rect_h, canvas.width, rect_h);
+     }
+ }
+ 
+ let color_index = 0;
+ 
+ let undoStack = [];
+ 
+ function mousehandler(pix_w, pix_h) {
+     return function (e) {
+	 let [ctx, canvas] = getCtx();
+	 let [mouse_x, mouse_y] = getCursorPosition(e);
+	 
+	 let x = Math.ceil(mouse_x / pix_w) - 1,
+	     y = Math.ceil(mouse_y / pix_h) - 1;
 
-  function draw(canvas, ctx, pix_w, pix_h) {
-      console.assert(ctx);
+	 let top_element = undoStack[undoStack.length - 1];
+	 let new_undo_frame = {x: x,
+			       y: y,
+			       old_color_index: real_pixels[y][x]};
+	 if (top_element == new_undo_frame) return;
 
-      ctx.fillStyle = background_color;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const w = real_pixels[0].length,
-	    h = real_pixels.length;
-
-      console.log(`size is ${w}, ${h}`);
-
-      for(let y = 0; y < h ; y++) {
-	  for(let x = 0; x < w; x++) {
-	      let index = real_pixels[y][x];
-	      let color = palette[index];
-
-	      ctx.fillStyle = color;
-	      if(showfinal) {
-		  ctx.fillRect(x * pix_w, y * pix_h, pix_w, pix_h);
-	      }
-	      else ctx.fillRect(x * pix_w + 5, y * pix_h + 5, pix_w - 10, pix_h - 10);
-	  }
-      }
-  }
-
-  // const palette_columns = 1;
-
-  function palette_color_h() {
-      let [_, canvas] = getCtx('#chosen-palette');
-      return canvas.height / palette.length;
-  }
-  function drawPalette() {
-      let [ctx, canvas] = getCtx('#chosen-palette');
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const rect_h = palette_color_h();
-
-      for(let y = 0; y < palette.length; y++) {
-	  let color = palette[y];
-	  ctx.fillStyle = color;
-	  ctx.fillRect(0, y * rect_h, canvas.width, rect_h);
-      }	  
-  }
-
-  let color_index = 0;
-
-  function mousehandler(pix_w, pix_h) {
-      return function (e) {
-	  let [ctx, canvas] = getCtx();
-	  let [mouse_x, mouse_y] = getCursorPosition(e);
-	  
-	  let x = Math.ceil(mouse_x / pix_w) - 1,
-	      y = Math.ceil(mouse_y / pix_h) - 1;
-
-	  real_pixels[y][x] = color_index;
-	  draw(canvas, ctx, pix_w, pix_h);
-	  console.log('drawn');
-      }
-  }
-
-  function resetSelectedColor() {
-      let color = palette[color_index];
-      document.querySelector('#current-color').style.backgroundColor = color;
-  }
-
-  function paletteMouseHandler() {
-      return e => {
-	  let [_, mouse_y] = getCursorPosition(e);
-	  const rect_h = palette_color_h();
-	  color_index = Math.floor(mouse_y / rect_h);
-	  resetSelectedColor();
-      }
-  }
-
+	 undoStack.push(new_undo_frame);
+	 document.querySelector('#undoStack').innerHTML = JSON.stringify(undoStack);
+	 
+	 real_pixels[y][x] = color_index;
+	 draw(canvas, ctx, pix_w, pix_h);
+	 console.log('drawn');
+     }
+ }
+ 
+ function resetSelectedColor() {
+     let color = palette[color_index];
+     document.querySelector('#current-color').style.backgroundColor = color;
+ }
+ 
+ function paletteMouseHandler() {
+     return e => {
+	 let [_, mouse_y] = getCursorPosition(e);
+	 const rect_h = palette_color_h();
+	 color_index = Math.floor(mouse_y / rect_h);
+	 resetSelectedColor();
+     }
+ }
+ 
  function calculate_pixwh(canvas) {
      let pix_w = Math.ceil(canvas.width / pixels_w());
      let pix_h = Math.ceil((canvas.height / pixels_h()));
-
+     
      return [pix_w, pix_h];
  }
+ 
+ 
+ window.addEventListener('DOMContentLoaded', _ => {
+     let [ctx, canvas] = getCtx();
+     
+     //set up the dimensions 
+     let [pix_w, pix_h] = calculate_pixwh(canvas);
+     
+     //set up the event handlers      
+     let palette_canvas = document.querySelector('#chosen-palette');
+     palette_canvas.addEventListener('mouseup', paletteMouseHandler());
+     palette_canvas.addEventListener('mousemove', e => {
+	 let handler = paletteMouseHandler();
+	 if (e.buttons > 0)
+	     handler(e);
+     });
+     
+     canvas.addEventListener('mouseup', mousehandler(pix_w, pix_h));
+     canvas.addEventListener('mousemove', e => {
+	 let handler = mousehandler(pix_w, pix_h);
+	 
+	 if (e.buttons > 0)
+	     handler(e);
+     });
+     
+     document.querySelector('#palette_chooser').addEventListener('change', async function (e) {
+	 let new_palette_id = e.currentTarget.value;
+	 
+	 let resp = await fetch('/sprite/{{id}}/change-palette', {
+	     method: 'POST',
+	     body: JSON.stringify({ 'palette-id': new_palette_id })
+	 });
+	 
+	 if (!resp.ok) {
+	     let txt = await resp.text();
+	     alert(`Palette change failed: ${resp.status} ${txt}`);
+	     return;
+	 }
+	 
+	 let new_palette = await resp.json();
+	 palette = new_palette;
+	 draw(canvas, ctx, pix_w, pix_h);
+	 drawPalette();
+     });
+     
+     document.querySelector('#save_sprite').addEventListener('click', async function (_) {
+	 let resp = await fetch('/save-lisp-sprite/{{id}}', {
+	     method: 'POST',
+	     body: JSON.stringify(real_pixels)
+	 });
+	 if (resp.status != 204) {
+	     let txt = await resp.text();
+	     alert(`Save failed: ${resp.status} ${txt}`);
+	 }
+     });
+     
+     let bgcolor_input = document.querySelector('#bgcolor');
+     bgcolor_input.value = background_color;
+     bgcolor_input.addEventListener('input', e => {
+	 background_color = e.currentTarget.value;
+	 draw(canvas, ctx, pix_w, pix_h);
+     });
+     
+     let finalize_input = document.querySelector('#show_final');
+     showfinal = finalize_input.checked;
+     finalize_input.addEventListener('click', e => {
+	 showfinal = e.target.checked;
+	 draw(canvas, ctx, pix_w, pix_h);
+     });
+     
+     // handle shrinking
+     let shrink_pxs = document.querySelector('#shrink_pixels');
+     shrink_pxs.addEventListener('click', e => {
+	 shrank = e.target.checked;
+	 
+	 if (shrank) {
+	     canvas.width = pixels_w();
+	     canvas.height = pixels_h();
+	 }
+	 else {
+	     canvas.width = 800;
+	     canvas.height = 600;
+	 }
+	 
+	 let [pix_w2, pix_h2] = calculate_pixwh(canvas);
+	 pix_w = pix_w2;
+	 pix_h = pix_h2;
+	 
+	 draw(canvas, ctx, pix_w, pix_h);
+     });
+     
+     // click shrink_pxs twice to make event handler set up dimensions correctly
+     shrink_pxs.click();
+     shrink_pxs.click();
+     
+     // and finally render the initial, saved sprite in the correct form (regarding the #show_final checked state)
+     draw(canvas, ctx, pix_w, pix_h);
+     drawPalette();
+     resetSelectedColor();
 
 
-  window.addEventListener('DOMContentLoaded', _ => {
-      let [ctx, canvas] = getCtx();
+     // set up ctrl+z
+     document.addEventListener('keydown', function(event) {
+	 // in mac, cmd seems to equal to meta 
+	 if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+	     let {x, y, old_color_index} = undoStack.pop();
+	     /* alert(`Setting color ${old_color_index} to [${x}, ${y}]`); */
+	     document.querySelector('#undoStack').innerHTML = JSON.stringify(undoStack);
 
-      //set up the dimensions 
-      let [pix_w, pix_h] = calculate_pixwh(canvas);
-
-      //set up the event handlers      
-      let palette_canvas = document.querySelector('#chosen-palette');
-      palette_canvas.addEventListener('mouseup', paletteMouseHandler());
-      palette_canvas.addEventListener('mousemove', e => {
-	  let handler = paletteMouseHandler();
-	  if(e.buttons > 0)
-	      handler(e);
-      });
-      
-      canvas.addEventListener('mouseup', mousehandler(pix_w, pix_h));
-      canvas.addEventListener('mousemove', e => {
-	  let handler = mousehandler(pix_w, pix_h);
-
-	  if (e.buttons > 0)
-	      handler(e);
-      });
-
-      document.querySelector('#palette_chooser').addEventListener('change', async function(e) {
-	  let new_palette_id = e.currentTarget.value;
-
-	  let resp = await fetch('/sprite/{{id}}/change-palette', {method: 'POST',
-								   body: JSON.stringify({'palette-id': new_palette_id})});
-
-	  if(!resp.ok) {
-	      let txt = await resp.text();
-	      alert(`Palette change failed: ${resp.status} ${txt}`);
-	      return;
-	  }
-
-	  let new_palette = await resp.json();
-	  palette = new_palette;
-	  draw(canvas, ctx, pix_w, pix_h);
-	  drawPalette();
-      });
-
-      document.querySelector('#save_sprite').addEventListener('click', async function(_) {
-	  let resp = await fetch('/save-lisp-sprite/{{id}}', {method: 'POST',
-							      body: JSON.stringify(real_pixels)});
-	  if(resp.status != 204) {
-	      let txt = await resp.text();
-	      alert(`Save failed: ${resp.status} ${txt}`);
-	  }
-      });
-
-      let bgcolor_input = document.querySelector('#bgcolor');
-      bgcolor_input.value = background_color;
-      bgcolor_input.addEventListener('input', e => {
-	  background_color = e.currentTarget.value;
-	  draw(canvas, ctx, pix_w, pix_h);
-      });
-
-      let finalize_input = document.querySelector('#show_final');
-      showfinal = finalize_input.checked;
-      finalize_input.addEventListener('click', e => {
-	  showfinal = e.target.checked;
-	  draw(canvas, ctx, pix_w, pix_h);
-      });
-
-      // handle shrinking
-      let shrink_pxs = document.querySelector('#shrink_pixels');
-      shrink_pxs.addEventListener('click', e => {
-	  shrank = e.target.checked;
-
-	  if(shrank) {
-	      canvas.width = pixels_w();
-	      canvas.height = pixels_h();
-	  }
-	  else {
-	      canvas.width = 800;
-	      canvas.height = 600;
-	  }
-
-	  let [pix_w2, pix_h2] = calculate_pixwh(canvas);
-	  pix_w = pix_w2;
-	  pix_h = pix_h2;
-
-	  draw(canvas, ctx, pix_w, pix_h);
-      });
-
-      // click shrink_pxs twice to make event handler set up dimensions correctly
-      shrink_pxs.click();
-      shrink_pxs.click();
-
-      // and finally render the initial, saved sprite in the correct form (regarding the #show_final checked state)
-      draw(canvas, ctx, pix_w, pix_h);
-      drawPalette();
-      resetSelectedColor();
-  });
-	
+	     real_pixels[y][x] = old_color_index;
+	     draw(canvas, ctx, pix_w, pix_h);
+	 }
+     });
+ });
+ 
 </script>
 
 <div class="two-column-container">
     <div style="display:block;">
 	<canvas width="800" height="600" id="sprite_canvas"> </canvas>
     </div>
-  
-  <div class="left-sidebar">
-    <div>
-      <h1>Chosen color:</h1>
-      <div id="current-color" style="width: 100px; height: 100px;"> </div>
-      <h1>Palette</h1>
-      <select id="palette_chooser">
-	{{#palettes}}
-	<option value="{{palette-id}}">{{palette-name}}</option>
-	{{/palettes}}
-      </select>
-      <canvas id="chosen-palette" width="100" height="200"> </canvas>
+    
+    <div class="left-sidebar">
+	<div>
+	    <h1>Chosen color:</h1>
+	    <div id="current-color" style="width: 100px; height: 100px;"> </div>
+	    <h1>Palette</h1>
+	    <select id="palette_chooser">
+		{{#palettes}}
+		<option value="{{palette-id}}">{{palette-name}}</option>
+		{{/palettes}}
+	    </select>
+	    <canvas id="chosen-palette" width="100" height="200"> </canvas>
+	    
+	    <h1>Background color</h1>
+	    <input type="color" id="bgcolor" />
+	    <label>
+		<input type="checkbox" id="show_final" />
+		Show final sprite (for exporting?)
+	    </label>
+	    
+	    <label>
+		<input type="checkbox" id="shrink_pixels" />
+		Shrink pixels (make 1px in sprite = 1px in display)
+	    </label>
+	    
+	    <button id="save_sprite">Save sprite to db</button>
+	    To export the sprite, use your browser's native Save Image As button in the context menu
 
-      <h1>Background color</h1>
-      <input type="color" id="bgcolor" />
-      <label>
-	<input type="checkbox" id="show_final" />
-	Show final sprite (for exporting?)
-      </label>
-
-      <label>
-	  <input type="checkbox" id="shrink_pixels" />
-	  Shrink pixels (make 1px in sprite = 1px in display)
-      </label>
-
-      <button id="save_sprite">Save sprite to db</button>      
-      To export the sprite, use your browser's native Save Image As button in the context menu
+	    
+	    <details>
+		<summary> Undo stack: </summary>
+		<div id="undoStack" />
+	    </details>
+	</div>
     </div>
-  </div>
 </div>
