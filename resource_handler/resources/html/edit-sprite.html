@@ -1,3 +1,13 @@
+<style>
+ .tool-group {
+     margin-top: 10px;
+     border-top: 2px solid gray;
+     
+     padding-bottom: 10px;
+     border-bottom: 2px solid gray;
+ }
+</style>
+
 <script>
  function getCursorPosition(event) {
      let target = event.currentTarget;
@@ -101,9 +111,9 @@
  let color_index = 0;
  
  let undoStack = [];
- 
- function mousehandler(pix_w, pix_h) {
-     return function (e) {
+
+ let tools =
+     {'pen': function (pix_w, pix_h, e) {
 	 let [ctx, canvas] = getCtx();
 	 let [mouse_x, mouse_y] = getCursorPosition(e);
 	 
@@ -122,6 +132,14 @@
 	 real_pixels[y][x] = color_index;
 	 draw(canvas, ctx, pix_w, pix_h);
 	 console.log('drawn');
+     },
+      'square': function (pix_w, pix_h, e) { alert ("Square"); }};
+ 
+ let selectedTool = tools.pen;
+	 
+ function mousehandler(pix_w, pix_h) {
+     return function (e) {
+	 selectedTool(pix_w, pix_h, e);
      }
  }
  
@@ -258,6 +276,23 @@
 	     draw(canvas, ctx, pix_w, pix_h);
 	 }
      });
+
+     let tool_div = document.querySelector('#tools');
+     let tool_names = Object.keys(tools);
+     tool_names.forEach(name => {
+	 let input = document.createElement('input');
+	 input.type = 'radio';
+	 input.id = name;
+	 input.name = 'tools';
+	 input.addEventListener('change', _ => { selectedTool = tools[name]; });
+
+	 let lbl = document.createElement('label');
+	 let lbl_txt = document.createTextNode(`Tool ${name}`);
+	 lbl.appendChild(input);
+	 lbl.appendChild(lbl_txt);
+	 tool_div.appendChild(lbl);
+     });
+     
  });
  
 </script>
@@ -271,31 +306,45 @@
 	<div>
 	    <h1>Chosen color:</h1>
 	    <div id="current-color" style="width: 100px; height: 100px;"> </div>
-	    <h1>Palette</h1>
-	    <select id="palette_chooser">
-		{{#palettes}}
-		<option value="{{palette-id}}">{{palette-name}}</option>
-		{{/palettes}}
-	    </select>
-	    <canvas id="chosen-palette" width="100" height="200"> </canvas>
-	    
-	    <h1>Background color</h1>
-	    <input type="color" id="bgcolor" />
-	    <label>
-		<input type="checkbox" id="show_final" />
-		Show final sprite (for exporting?)
-	    </label>
-	    
-	    <label>
-		<input type="checkbox" id="shrink_pixels" />
-		Shrink pixels (make 1px in sprite = 1px in display)
-	    </label>
-	    
-	    <button id="save_sprite">Save sprite to db</button>
-	    To export the sprite, use your browser's native Save Image As button in the context menu
+
+	    <div class="tool-group">
+		<h1>Palette</h1>
+		<select id="palette_chooser">
+		    {{#palettes}}
+		    <option value="{{palette-id}}">{{palette-name}}</option>
+		    {{/palettes}}
+		</select>
+		<canvas id="chosen-palette" width="100" height="200"> </canvas>
+	    </div>
+
+	    <div class="tool-group" >
+		<h1>Background color</h1>
+		<input type="color" id="bgcolor" />
+	    </div>
+
+	    <div id="tools" class="tool-group" >
+		Tools: <br />
+	    </div>
+
+	    <div class="tool-group" >
+		<label>
+		    <input type="checkbox" id="show_final" />
+		    Show final sprite (for exporting?)
+		</label>
+		
+		<label>
+		    <input type="checkbox" id="shrink_pixels" />
+		    Shrink pixels (make 1px in sprite = 1px in display)
+		</label>
+	    </div>
+
+	    <div class="tool-group">
+		<button id="save_sprite">Save sprite to db</button>
+		To export the sprite, use your browser's native Save Image As button in the context menu
+	    </div>
 
 	    
-	    <details>
+	    <details class="tool-group" >
 		<summary> Undo stack: </summary>
 		<div id="undoStack" />
 	    </details>
