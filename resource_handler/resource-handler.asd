@@ -46,5 +46,8 @@
 		  :components ((:file "sprite")))
 		 (:file "main")))))
 
-;; (asdf:make "linnarope-resource-handler")
+;; (ql:quickload "linnarope-resource-handler")
 ;; (linnarope.main:start-server)
+
+;; or alternatively do this 
+;; (asdf:make "linnarope-resource-handler")
