@@ -1,14 +1,21 @@
 <script>
 
-  async function deleteSprite(name, id) {
+  async function dodelete(name, id, url) {
       if(!confirm(`Do you really want to delete ${name}?`)) return;
 
-      let response = await fetch(`/sprite/${id}`, {method: 'DELETE'});
+      let response = await fetch(url, {method: 'DELETE'});
 
       if (response.ok) { location.reload(); }
       else alert(response.status + " " + response.statusText + " " + response.text());
-  }  
-  
+  }
+
+  async function deleteLispSprite(name, id) {
+      dodelete(name, id, `/lisp-sprite/${id}`);
+  }
+
+  async function deleteSprite(name, id) {
+      dodelete(name, id, `/sprite/${id}`);
+  }
   
 </script>
 
@@ -26,8 +33,9 @@
   {{/sprites}}
 
   {{#lisp-sprites}}
-  <li title="Size {{width}}px x {{height}}px">
+  <li class="lisp-sprite-li" title="Size {{width}}px x {{height}}px">
     <a href="/edit-sprite/{{id}}">{{name}} </a>
+    <button onclick="deleteLispSprite('{{name}}', {{id}})" >Delete this sprite</button> 
   </li>
   {{/lisp-sprites}}
 

@@ -52,6 +52,13 @@
 		 :justify-content "space-between"
 		 :flex-direction "row")		 
 
+		(.lisp-sprite-li
+		 :display "flex"
+		 :justify-content "space-between"
+		 :flex-direction "row")
+
+		(.map-list
+		 :width "15%")
 
 		;; current-map css
 		(.map-container

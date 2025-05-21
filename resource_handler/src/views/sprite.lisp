@@ -53,6 +53,11 @@
   (setf (hunchentoot:return-code*) 204)
   "")
 
+(defroute delete-lisp-sprite ("/lisp-sprite/:id" :method :delete :decorators (@db)) ()
+  (postmodern:execute "DELETE FROM lisp_sprite WHERE id = $1" id)
+  (setf (hunchentoot:return-code*) 204)
+  "")
+
 (defsubtab (edit-lisp-sprite "/edit-sprite/:id" "edit-sprite.html" sprites) () ()
   (let* ((data (coerce (postmodern:query
 			"
