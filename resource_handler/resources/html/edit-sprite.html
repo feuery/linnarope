@@ -107,13 +107,37 @@
 	 ctx.fillRect(0, y * rect_h, canvas.width, rect_h);
      }
  }
+
+ function commitSquare(start_point, final_point) {
+     let smaller_x = Math.min(start_point[0], final_point[0]),
+	 higher_x = Math.max(start_point[0], final_point[0]);
+
+     let smaller_y = Math.min(start_point[1], final_point[1]),
+	 higher_y = Math.max(start_point[1], final_point[1]);
+     
+     for(let x = smaller_x; x < higher_x; x++) {
+	 for(let y = smaller_y; y < higher_y; y++) {
+	     real_pixels[y][x] = color_index;
+	 }
+     }
+ }
  
  let color_index = 0;
  
  let undoStack = [];
 
+ function makeSimpleTool(fn) {
+     return {event: fn};
+ }
+
+ function makeComplexTool(mousedown, mousedrag, mouseup) {
+     return {mousedown: mousedown,
+	     mousedrag: mousedrag,
+	     mouseup: mouseup};
+ }
+
  let tools =
-     {'pen': function (pix_w, pix_h, e) {
+     {'pen': makeSimpleTool((pix_w, pix_h, e) => {
 	 let [ctx, canvas] = getCtx();
 	 let [mouse_x, mouse_y] = getCursorPosition(e);
 	 
@@ -132,14 +156,52 @@
 	 real_pixels[y][x] = color_index;
 	 draw(canvas, ctx, pix_w, pix_h);
 	 console.log('drawn');
-     },
-      'square': function (pix_w, pix_h, e) { alert ("Square"); }};
- 
+     }),
+      // let's fake a lisp-like (let ...) block with a closure returning closure 
+      'square': (() => {
+	  let start_point = [];
+	  let current_point = [];
+	  return makeComplexTool((pix_w, pix_h, e) => {
+	      let [mouse_x, mouse_y] = getCursorPosition(e);
+	      
+	      let x = Math.ceil(mouse_x / pix_w) - 1,
+		  y = Math.ceil(mouse_y / pix_h) - 1;
+	      
+	      start_point = [x, y]},
+				 (pix_w, pix_h, e) =>
+				     {
+					 let [mouse_x, mouse_y] = getCursorPosition(e);
+					 let [ctx, canvas] = getCtx();
+					 
+					 let x = Math.ceil(mouse_x / pix_w) - 1,
+					     y = Math.ceil(mouse_y / pix_h) - 1;
+
+					 current_point = [x,y];
+					 draw(canvas, ctx, pix_w, pix_h);
+
+					 ctx.fillStyle = '#FFF';
+					 ctx.fillRect(start_point[0] * pix_w, start_point[1] * pix_h,
+						      (current_point[0] - start_point[0]) * pix_w,
+						      (current_point[1] - start_point[1]) * pix_h);
+				     },
+				 
+				 (pix_w, pix_h, e) => {
+				     commitSquare(start_point, current_point);
+				     
+				     let [ctx, canvas] = getCtx();
+				     draw(canvas, ctx, pix_w, pix_h);
+				     
+				     current_point = start_point = [];
+				 }
+      )})()};
+	  
  let selectedTool = tools.pen;
 	 
  function mousehandler(pix_w, pix_h) {
      return function (e) {
-	 selectedTool(pix_w, pix_h, e);
+	 if (selectedTool.event)
+	     selectedTool.event(pix_w, pix_h, e);
+	 else selectedTool.mousedrag(pix_w, pix_h, e);
      }
  }
  
@@ -180,7 +242,17 @@
 	     handler(e);
      });
      
-     canvas.addEventListener('mouseup', mousehandler(pix_w, pix_h));
+     canvas.addEventListener('mouseup', e => {
+	 if (selectedTool.event)
+	     selectedTool.event(pix_w, pix_h, e);
+	 else selectedTool.mouseup(pix_w, pix_h, e);
+     });
+
+     canvas.addEventListener('mousedown', e => {
+	 if(!selectedTool.mousedown) return;
+	 selectedTool.mousedown(pix_w, pix_h, e);
+     });	 
+	 
      canvas.addEventListener('mousemove', e => {
 	 let handler = mousehandler(pix_w, pix_h);
 	 
@@ -284,6 +356,7 @@
 	 input.type = 'radio';
 	 input.id = name;
 	 input.name = 'tools';
+	 input.checked = name == 'pen';
 	 input.addEventListener('change', _ => { selectedTool = tools[name]; });
 
 	 let lbl = document.createElement('label');
