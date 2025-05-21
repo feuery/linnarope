@@ -12,7 +12,7 @@
 (deftab (sprites "/sprites" "sprites.html")
     `((:sprites . ,(postmodern:query "SELECT internal_id as \"id\", name FROM sprite" :alists))
       (:lisp-sprites . ,(postmodern:query
-			 "SELECT id, name FROM lisp_sprite" :alists))
+			 "SELECT id, name, w as width, h as height FROM lisp_sprite" :alists))
       (:palettes . ,(postmodern:query
 		     "SELECT id, name FROM palette" :alists))))
 				
