@@ -114,12 +114,20 @@
 
      let smaller_y = Math.min(start_point[1], final_point[1]),
 	 higher_y = Math.max(start_point[1], final_point[1]);
+
+     let big_undo_frame = {kind: 'big',
+			   frames: []};
      
      for(let x = smaller_x; x < higher_x; x++) {
 	 for(let y = smaller_y; y < higher_y; y++) {
+	     big_undo_frame.frames.push({x: x,
+					 y: y,
+					 old_color_index: real_pixels[y][x]});
 	     real_pixels[y][x] = color_index;
 	 }
      }
+
+     undoStack.push(big_undo_frame);
  }
  
  let color_index = 0;
@@ -340,11 +348,21 @@
      document.addEventListener('keydown', function(event) {
 	 // in mac, cmd seems to equal to meta 
 	 if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-	     let {x, y, old_color_index} = undoStack.pop();
-	     /* alert(`Setting color ${old_color_index} to [${x}, ${y}]`); */
-	     document.querySelector('#undoStack').innerHTML = JSON.stringify(undoStack);
 
-	     real_pixels[y][x] = old_color_index;
+	     let top_frame = undoStack.pop();
+
+	     let handle = (frame) => {
+		 let {x, y, old_color_index} = frame;
+		 real_pixels[y][x] = old_color_index;
+	     }
+
+	     if(top_frame.kind == 'big') {
+		 top_frame.frames.forEach(handle);
+	     }
+	     else {	 
+		 handle(top_frame);
+	     }
+	     document.querySelector('#undoStack').innerHTML = JSON.stringify(undoStack);
 	     draw(canvas, ctx, pix_w, pix_h);
 	 }
      });
