@@ -128,6 +128,7 @@
      }
 
      undoStack.push(big_undo_frame);
+     updateUndoStackView();
  }
  
  let color_index = 0;
@@ -142,6 +143,10 @@
      return {mousedown: mousedown,
 	     mousedrag: mousedrag,
 	     mouseup: mouseup};
+ }
+
+ function updateUndoStackView() {
+     document.querySelector('#undoStack').innerHTML = JSON.stringify(undoStack);
  }
 
  let tools =
@@ -159,7 +164,7 @@
 	 if (top_element == new_undo_frame) return;
 
 	 undoStack.push(new_undo_frame);
-	 document.querySelector('#undoStack').innerHTML = JSON.stringify(undoStack);
+	 updateUndoStackView();
 	 
 	 real_pixels[y][x] = color_index;
 	 draw(canvas, ctx, pix_w, pix_h);
