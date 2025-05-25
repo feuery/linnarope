@@ -1,6 +1,9 @@
 #include <app.h>
 #include <finrope.h>
 #include <project.h>
+#include <ecl/ecl.h>
+#include <swank.h>
+#include <engine_api.h>
 
 App::~App() { }
 
@@ -30,9 +33,16 @@ SDL_Window* App::createWindow(bool hidden) {
   return window;
 }
 
-Game::Game(std::string sqlite_path): sqlite_path(sqlite_path) { }
+Game::Game(int argc, char **argv, std::string sqlite_path): sqlite_path(sqlite_path), argc(argc), argv(argv) { }
 
 void Game::do_it() {
+  cl_boot(argc, argv);
+  atexit(cl_shutdown);
+  start_swank();
+
+  register_callbacks();
+
+  
   SDL_Window *window = createWindow();
 
   assert(window);

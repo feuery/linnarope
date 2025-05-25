@@ -33,7 +33,7 @@ public:
   Tile (int gid, bool fhor, bool fver);
   Tile (const Tile& t);
 
-  virtual ~Tile();
+  virtual ~Tile() = default;
   
   const char* get_typename() override;
 private: Tile ();
@@ -202,6 +202,7 @@ public:
   void loadTilesets(const char *basepath);
 
   virtual ~Map();
+  Map();
 };
 
 std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<int, bool> entry_script_id, sqlite3 *db, Project *proj);

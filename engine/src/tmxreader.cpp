@@ -39,7 +39,6 @@ Tile::Tile (int gid, bool fhor, bool fver) {
 }
 
 ObjectGroup::~ObjectGroup() {}
-Tile::~Tile() {}
 Layer::~Layer() {}
 LayerChunk::~LayerChunk() {}    
 
@@ -69,18 +68,6 @@ Tile unwrap_tile_id(unsigned int tile) {
   Tile t( globalID, horizontalFlip, verticalFlip);
   return t;
 }
-
-template <typename T>
-void transpose(std::vector<std::vector<T>> &arr) {
-  for (int x = 0; x < arr.size(); x++) {
-    for (int y = 0; y < x; y++) {
-      T tmp = arr[x][y];
-      arr[x][y] = arr[y][x];
-      arr[y][x] = tmp;	
-    }
-  }
-}
-    
 
 // this function tries to parse tiled's csv layers into something useful without
 // completely exploding the universe. It tries to validate that the dimensions of the
@@ -142,8 +129,6 @@ std::vector<std::vector<Tile>> parse_layer_csv_data(const char *csv_data,
   }
 
   assert ( y == expected_h );
-
-  transpose(map);
 
   return map;
 }
@@ -625,8 +610,9 @@ std::variant<bool, Map> read_map(const char *tmx_data, int map_id, std::variant<
   return m;
 }
 
-Map::~Map() {
-}
+Map::~Map() {}
+
+Map::Map():x(0),y(0) {}
 
 void delete_map(Map *m) {
   delete m;
@@ -676,7 +662,7 @@ void Map::renderMap(SDL_Renderer *r) {
     for (auto &chunk: chunks) {
       for (int x = chunk.x; x < chunk.x + chunk.width; x++)
 	for (int y = chunk.y; y  < chunk.y + chunk.height; y++) {	    
-	  Tile& tile = chunk.tiles.at( x - chunk.x).at(y - chunk.y);
+	  Tile& tile = chunk.tiles.at(y - chunk.y).at( x - chunk.x);
 	  SDL_Surface *tile_src = tileAt(tile.GlobalID);
 	    
 	  if(! tile_src) {

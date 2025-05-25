@@ -1,5 +1,4 @@
 #include "SDL_render.h"
-#include <ecl/ecl.h>
 
 #include <cassert>
 #include <cstdio>
@@ -9,8 +8,6 @@
 #include <getopt.h>
 #include <SDL_image.h>
 #include <sqlite3.h>
-#include <swank.h>
-#include <engine_api.h>
 #include <scene.h>
 #include <string>
 #include <project.h>
@@ -81,7 +78,7 @@ App* getApp (int argc, char **argv) {
   }
   else if (game != "" && export_dst_dir == "") {
     printf("Creating game app \"%s\"\n", game.c_str());
-    app = new Game(game);
+    app = new Game(argc, argv, game);
   }
   else if (wholemaps_sourcedb_path != "" && png != "") {
     app = new WholeMapRenderer(wholemaps_sourcedb_path, png);
@@ -97,12 +94,6 @@ App* getApp (int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
-  cl_boot(argc, argv);
-  atexit(cl_shutdown);
-  start_swank();
-
-  register_callbacks();
-
   App* app = getApp(argc, argv);
   app->do_it();
   freeApp(app);

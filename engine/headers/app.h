@@ -15,9 +15,11 @@ public:
 class Game: public App {
 private :
   std::string sqlite_path;
+  int argc;
+  char **argv;
   
 public:
-  Game(std::string sqlite_path);
+  Game(int argc, char **argv, std::string sqlite_path);
   
   void do_it() override;
 };
