@@ -104,7 +104,7 @@ void Game::do_it() {
     SDL_RenderPresent(renderer);
   }
 
-  delete_map(map);
+  // delete_map(map);
 
   // Destroy the render, window and finalise SDL
   SDL_DestroyRenderer(renderer);
