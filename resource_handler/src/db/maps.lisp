@@ -122,42 +122,43 @@ VALUES
 
 (defun insert-objects-and-groups ( map-id tmx-metadata)
   "Inserts objects and groups to db and returns `(values group-mapping object-mapping)`, which map tmx-local ids to sqlite internal auto_increment ids"
-  (let* ((groups (get-alist tmx-metadata :object-groups))
-	 (group-mapping (reduce #'hashtable-merge
-				(mapcar (lambda (group)
-					  (let ((group-id (get-alist group "id"))
-						(name (get-alist group "name")))
-					    (destructuring-bind (objectgroup-id objectgroup-internal-id)
-						(car (postmodern:query "INSERT INTO objectgroup (ID, name, map_id) VALUES ($1, $2, $3) returning id, internal_id"
-								  group-id name map-id))
+  (let* ((groups (get-alist tmx-metadata :object-groups)))
+    (when groups 
+      (let* ((group-mapping (reduce #'hashtable-merge
+				    (mapcar (lambda (group)
+					      (let ((group-id (get-alist group "id"))
+						    (name (get-alist group "name")))
+						(destructuring-bind (objectgroup-id objectgroup-internal-id)
+						    (car (postmodern:query "INSERT INTO objectgroup (ID, name, map_id) VALUES ($1, $2, $3) returning id, internal_id"
+									   group-id name map-id))
 
-					      (hash (objectgroup-id objectgroup-internal-id)))))
-					groups)))
-	 (objs (mapcan (lambda (ogroup)
-			 (mapcar (lambda (obj)
-				   (let ((internal-id (gethash (parse-number:parse-number (get-alist ogroup "id")) group-mapping)))
-				     (assert internal-id)
-				     (cons (cons :group-internal-id internal-id) obj)))
-				 (get-alist ogroup :objects)))
-		       groups)))
-    (let* ((object-mapping (reduce #'hashtable-merge
-				   (mapcar (lambda (obj)
-					     (let* ((id (get-alist obj "id"))
-						    (name (or (get-alist obj "name") ""))
-						    (x (get-alist obj "x" :expected-type :int))
-						    (y (get-alist obj "y" :expected-type :int))
-						    (width (get-alist obj "width" :expected-type :int))
-						    (height (get-alist obj "height" :expected-type :int))
-						    (warp-zone? (get-alist obj :warp-zone? :expected-type :lisp-bool))
-						    (group-id (get-alist obj :group-internal-id)))
-					       (assert group-id)
-					       (destructuring-bind (id internal-id) (first
-										     (postmodern:query
-										      "INSERT INTO object (id, name, x, y, width, height, group_id, warp_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, internal_id" id name x y width height group-id warp-zone?))
-						 (hash (id internal-id)))))
-					   objs))))
+						  (hash (objectgroup-id objectgroup-internal-id)))))
+					    groups)))
+	     (objs (mapcan (lambda (ogroup)
+			     (mapcar (lambda (obj)
+				       (let ((internal-id (gethash (parse-number:parse-number (get-alist ogroup "id")) group-mapping)))
+					 (assert internal-id)
+					 (cons (cons :group-internal-id internal-id) obj)))
+				     (get-alist ogroup :objects)))
+			   groups))
+	     (object-mapping (reduce #'hashtable-merge
+				     (mapcar (lambda (obj)
+					       (let* ((id (get-alist obj "id"))
+						      (name (or (get-alist obj "name") ""))
+						      (x (get-alist obj "x" :expected-type :int))
+						      (y (get-alist obj "y" :expected-type :int))
+						      (width (get-alist obj "width" :expected-type :int))
+						      (height (get-alist obj "height" :expected-type :int))
+						      (warp-zone? (get-alist obj :warp-zone? :expected-type :lisp-bool))
+						      (group-id (get-alist obj :group-internal-id)))
+						 (assert group-id)
+						 (destructuring-bind (id internal-id) (first
+										       (postmodern:query
+											"INSERT INTO object (id, name, x, y, width, height, group_id, warp_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, internal_id" id name x y width height group-id warp-zone?))
+						   (hash (id internal-id)))))
+					     objs))))
 
-      (values group-mapping object-mapping))))
+	(values group-mapping object-mapping)))))
 
 (defun import-tsx (base-path xml)
   (let ((tsx-data (linnarope.tsx:read-tsx xml)))
@@ -179,7 +180,12 @@ VALUES
 	(postmodern:execute "INSERT INTO tileset (filename, tsx_contents) VALUES ($1, $2) ON CONFLICT DO NOTHING" filename bytes)
 	(postmodern:execute "INSERT INTO map_to_tileset (map_id, tileset_filename) VALUES ($1, $2)" map-id filename)
 	(import-tsx base-path xml)))))
-	   
+
+(defun hash-table-count* (h)
+  (if h
+      (hash-table-count h)
+      0))
+
 (defun save-map-to-db! (tmx-path)
   (let* ((base-path (pathname
 		     (str:join "/"
@@ -196,9 +202,9 @@ VALUES
     (multiple-value-bind (group-mapping object-mapping) (insert-objects-and-groups  map-id tmx-metadata)
       (generate-png tmx-path)
       (format t "Inserted ~d layers, ~d groups and ~d objects ~%"
-	      (hash-table-count layer-mapping)
-	      (hash-table-count group-mapping)
-	      (hash-table-count object-mapping))
+	      (hash-table-count* layer-mapping)
+	      (hash-table-count* group-mapping)
+	      (hash-table-count* object-mapping))
       
       (format t "Made png of ~a in ~a~%" tmx-path png-path))))
 
