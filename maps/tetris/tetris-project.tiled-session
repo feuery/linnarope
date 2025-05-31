@@ -1,0 +1,21 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "",
+    "expandedProjectPaths": [
+    ],
+    "fileStates": {
+    },
+    "last.imagePath": "/Users/feuer/Projects/finrope/maps/tetris",
+    "map.height": 50,
+    "map.lastUsedFormat": "tmx",
+    "openFiles": [
+    ],
+    "project": "tetris-project.tiled-project",
+    "recentFiles": [
+    ],
+    "resizeMap.removeObjects": true,
+    "tileset.lastUsedFormat": "tsx"
+}
