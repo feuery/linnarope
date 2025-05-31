@@ -1,9 +1,6 @@
 
 #include "Palette.h"
-#include "SDL_pixels.h"
-#include "SDL_rect.h"
-#include "SDL_render.h"
-#include "SDL_surface.h"
+#include <SDL.h>
 #include "finrope.h"
 #include <cassert>
 #include <cstddef>
@@ -26,7 +23,8 @@ Lisp_sprite::Lisp_sprite(Lisp_sprite& spr): prerendered(spr.prerendered),
 					    w(spr.w),
 					    h(spr.h),
 					    palette(spr.palette),
-					    name(spr.name)
+					    name(spr.name),
+					    pixels(spr.pixels)
 { }
 
 

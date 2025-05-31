@@ -89,6 +89,14 @@ void Game::do_it() {
       case SDL_QUIT:
 	exit = true;
 	break;
+
+      case SDL_KEYDOWN:
+	scn.setKeydown(eventData.key.keysym.sym);
+	break;
+
+      case SDL_KEYUP:
+	scn.setKeyup(eventData.key.keysym.sym);
+	break;
       }
     }
 

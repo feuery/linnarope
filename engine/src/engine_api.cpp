@@ -1,21 +1,23 @@
-#include "ecl/ecl.h"
-#include "tmx_private.h"
-#include <stdexcept>
+#include <ropetimer.h>
+#include <ecl/ecl.h>
+#include <tmx_private.h>
 #include <tmxreader.h>
 #include <engine_api.h>
 #include <finrope.h>
 #include <cstdio>
 #include <swank.h>
-
 #include <scene.h>
 
 cl_object render(cl_object handle, cl_object x_, cl_object y_);
 
 void register_callbacks() {
-  DEFUN("setup-scene", setup_scene, 3);
-  DEFUN("get-resource", get_resource, 2);
-  DEFUN("render", render, 3);
-  DEFUN("change-map", change_map, 1);  
+  ecl_call("(defpackage engine (:use :cl) (:export :keydown? :get-sprite :setup-scene :get-resource :render :change-map :mstimer))");
+  DEFUN("engine:setup-scene", setup_scene, 3);
+  DEFUN("engine:get-resource", get_resource, 2);
+  DEFUN("engine:render", render, 3);
+  DEFUN("engine:change-map", change_map, 1);
+  DEFUN("engine:keydown?", is_keydown, 1);
+  DEFUN("engine:mstimer", timer, 0);
 }
 
 cl_object setup_scene(cl_object startup, cl_object update, cl_object teardown) {
@@ -68,4 +70,15 @@ cl_object change_map(cl_object map_handle) {
   current_scene->changeMap(m);
   
   return ECL_NIL;
+}
+
+cl_object is_keydown(cl_object keystr) {
+  std::string std_keystr = ecl_string_to_string(keystr);
+  assert(current_scene);
+  
+  return current_scene->is_keydown(std_keystr) ? ECL_T: ECL_NIL;
+}
+
+cl_object timer() {
+  return ecl_make_int(mstimer());
 }

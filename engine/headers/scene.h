@@ -5,6 +5,8 @@
 #include <tmx_private.h>
 #include <SDL.h>
 
+#include <unordered_map>
+
 
 /*
  * This class contains the current scene. It handles all the setup, teardown,
@@ -19,6 +21,8 @@ class Scene {
   
   cl_object current_startup, current_update, current_teardown;
   Map *current_map;
+
+  std::unordered_map<SDL_Keycode, bool> keystate;
   
  public:
   SDL_PixelFormat* currentFormat();
@@ -29,4 +33,9 @@ class Scene {
   void update();
   int resource_to_handle(const char *typename_, const char *resourcename);
   Resource* handle_to_resource(int handle);
+
+
+  bool is_keydown(std::string& keystr);
+  void setKeydown(SDL_Keycode keystr);
+  void setKeyup(SDL_Keycode keystr);
 };

@@ -1,5 +1,3 @@
-#include "SDL_render.h"
-
 #include <cassert>
 #include <cstdio>
 #include <SDL.h>

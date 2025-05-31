@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <tmx_private.h>
 #include <project.h>
 #include <cassert>
@@ -52,13 +51,26 @@ Palette &Project::getPalette(int id) {
 
 void Project::insertLisp_Sprite(int id, std::string name, Lisp_sprite scr) {
   lisp_sprites[name] = scr;
+  printf("Read sprite %s\n", name.c_str());
+  assert(!lisp_sprites[name].pixels.empty());
   id_to_lisp_sprites[id] = &lisp_sprites[name];
 }
 
 Lisp_sprite &Project::getLisp_Sprite(const char *nme) {
   assert(!lisp_sprites.empty());
+  try {
   return lisp_sprites.at(nme);
+  }
+  catch(std::out_of_range e) {
+    printf("Didn't find sprite called %s. Valid spritenames follow: \n", nme);
+    for(auto &pair: lisp_sprites) {
+      printf("%s, ", pair.first.c_str());
+    }
+    printf("\n");
+    throw e;
+  }
 }
+
 Lisp_sprite &Project::getLisp_Sprite(int id) {
   assert(!id_to_lisp_sprites.empty());
   Lisp_sprite *scr = id_to_lisp_sprites.at(id);

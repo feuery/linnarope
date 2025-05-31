@@ -219,17 +219,13 @@ void read_pixels(Lisp_sprite &sprite, sqlite3 *db) {
 
   sqlite3_bind_int(stmt, 1, sprite.id);
 
-  int c = 0;
   while((result = sqlite3_step(stmt)) == SQLITE_ROW) {
     int x = sqlite3_column_int(stmt, 0),
       y = sqlite3_column_int(stmt, 1),
       color_index = sqlite3_column_int(stmt, 2);
 
     sprite.pixels[x][y] = color_index;
-    c++;
   }
-
-  printf("Read %d pixels\n", c);
 
   sqlite3_finalize(stmt);
 }
@@ -257,7 +253,9 @@ void read_lisp_sprites(Project *project, sqlite3 *db) {
 
     Lisp_sprite sprite(id, name, w, h, project->getPalette(palette_id));
     read_pixels(sprite, db);
-    
+
+    assert(!sprite.pixels.empty());
+
     project->insertLisp_Sprite(id, name, sprite);
 
     printf("Loaded lisp sprite %s\n", name.c_str());
