@@ -170,6 +170,20 @@
 	 draw(canvas, ctx, pix_w, pix_h);
 	 console.log('drawn');
      }),
+      'fill': makeSimpleTool((pix_w, pix_h, e) => {
+	  const w = real_pixels[0].length,
+		h = real_pixels.length;
+	  
+	  for(let x = 0; x < w; x++) {
+	      for(let y = 0; y < h; y++) {
+		  real_pixels[y][x] = color_index;
+	      }
+	  }
+
+	  let [ctx, canvas] = getCtx();
+
+	  draw(canvas, ctx, pix_w, pix_h);
+      }),
       // let's fake a lisp-like (let ...) block with a closure returning closure 
       'square': (() => {
 	  let start_point = [];
