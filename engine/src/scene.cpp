@@ -1,3 +1,4 @@
+#include <cmath>
 #include <ecl/ecl.h>
 #include <handle.h>
 #include <string>
@@ -10,10 +11,11 @@
 #include <unordered_map>
 #include <ropetimer.h>
 
-Scene::Scene(Project *p): proj(p), 
-			  current_startup(ECL_NIL),
-			  current_update(ECL_NIL),
-			  current_teardown(ECL_NIL)
+Scene::Scene(Project *p, SDL_Renderer *r): proj(p), 
+					   current_startup(ECL_NIL),
+					   current_update(ECL_NIL),
+					   current_teardown(ECL_NIL),
+					   renderer(r)
 { }
 
 void Scene::changeMap(Map *m){
@@ -371,4 +373,29 @@ bool Scene::is_keydown(std::string &keystr) {
 
   if(result) { key_last_queried[keycode] = timer;}
   return result;
+}
+
+// returns radians 
+double angl (int x1, int y1, int x2, int y2) {
+  return atan2((x2 - x1), (y2 - y1));
+}
+
+void Scene::line(int x1, int y1, int x2, int y2, int thickness) {
+  if(thickness == 1) {
+    SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+    return;
+  }
+
+  double angle_rads = angl(x1, y1, x2, y2);
+  // I think PI/2 RAD == 90°
+  angle_rads += M_PI_2;
+
+  for(double i = 0.0; i < thickness; i++) {
+    double xx1 = x1 + (i * cos(angle_rads)),
+      yy1 = y1 + (i * sin(angle_rads)),
+      xx2 = x2 + (i * cos(angle_rads)),
+      yy2 = y2 + (i * sin(angle_rads));
+    
+    SDL_RenderDrawLine(renderer, xx1, yy1, xx2, yy2);
+  }  
 }

@@ -73,7 +73,7 @@ void Game::do_it() {
   bool exit = false;
   SDL_Event eventData;
 
-  Scene scn(proj);
+  Scene scn(proj, renderer);
   current_scene = &scn;
   scn.changeMap(map);
   

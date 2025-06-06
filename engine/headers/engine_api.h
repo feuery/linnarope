@@ -7,5 +7,6 @@ cl_object get_resource(cl_object _typename, cl_object resourcename);
 cl_object change_map(cl_object map_handle);
 cl_object is_keydown(cl_object keystr);
 cl_object timer();
+cl_object draw_line(cl_object x1, cl_object y1, cl_object x2, cl_object y2, cl_object thickness);
 
 void register_callbacks();

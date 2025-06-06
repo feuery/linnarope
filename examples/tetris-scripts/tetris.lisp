@@ -13,6 +13,9 @@
    (y :initarg :y :initform (error "wish i had an y") :accessor block-y)
    (form :initarg :form :initform (error "Wish i had a form") :accessor form)))
 
+(defparameter *field-width-blocks* 10)
+(defparameter *field-height-blocks* 20)
+
 (defmethod initialize-instance :after ((b block) &key)
   (assert (member (form b) *valid-blocks*)))
 
@@ -110,8 +113,10 @@
       (incf (block-x *current-block*)))
     
     (render current-map 0 0)
-    
-    (render-block *current-block*)))
+
+    (render-block *current-block*)
+
+    (draw-line 130 50 50 200 1)))
 
 (defun setup-tetris ()
   (format t "Set up tetris! ~%"))

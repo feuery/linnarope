@@ -1,3 +1,4 @@
+#include <cassert>
 #include <ropetimer.h>
 #include <ecl/ecl.h>
 #include <tmx_private.h>
@@ -11,13 +12,28 @@
 cl_object render(cl_object handle, cl_object x_, cl_object y_);
 
 void register_callbacks() {
-  ecl_call("(defpackage engine (:use :cl) (:export :keydown? :get-sprite :setup-scene :get-resource :render :change-map :mstimer))");
+  ecl_call("(defpackage engine (:use :cl) (:export :keydown? :get-sprite :setup-scene :get-resource :render :change-map :mstimer :draw-line))");
   DEFUN("engine:setup-scene", setup_scene, 3);
   DEFUN("engine:get-resource", get_resource, 2);
   DEFUN("engine:render", render, 3);
   DEFUN("engine:change-map", change_map, 1);
   DEFUN("engine:keydown?", is_keydown, 1);
   DEFUN("engine:mstimer", timer, 0);
+  DEFUN("engine:draw-line", draw_line, 5);
+}
+
+cl_object draw_line(cl_object x1, cl_object y1, cl_object x2, cl_object y2, cl_object thickness) {
+  assert(current_scene);
+
+  int xx1 = ecl_to_int(x1),
+    yy1 = ecl_to_int(y1),
+    xx2 = ecl_to_int(x2),
+    yy2 = ecl_to_int(y2),
+    thick = ecl_to_int(thickness);
+
+  current_scene->line(xx1, yy1, xx2, yy2, thick);
+  
+  return ECL_T;
 }
 
 cl_object setup_scene(cl_object startup, cl_object update, cl_object teardown) {
