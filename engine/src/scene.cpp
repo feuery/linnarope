@@ -1,3 +1,5 @@
+#include "SDL_render.h"
+#include "SDL_stdinc.h"
 #include <cmath>
 #include <ecl/ecl.h>
 #include <handle.h>
@@ -398,4 +400,9 @@ void Scene::line(int x1, int y1, int x2, int y2, int thickness) {
     
     SDL_RenderDrawLine(renderer, xx1, yy1, xx2, yy2);
   }  
+}
+
+void Scene::setColor(Uint8 r, Uint8 g, Uint8 b) {
+  printf("Set color to %d, %d, %d\n", r, g, b);
+  SDL_SetRenderDrawColor(renderer, r, g, b, 255);
 }

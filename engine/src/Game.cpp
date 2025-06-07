@@ -65,7 +65,7 @@ void Game::do_it() {
   map_x(map, 0);
   map_y(map, 0);
 
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   render_map(map, renderer);
 
   assert_map_makes_sense(map);

@@ -12,7 +12,7 @@
 cl_object render(cl_object handle, cl_object x_, cl_object y_);
 
 void register_callbacks() {
-  ecl_call("(defpackage engine (:use :cl) (:export :keydown? :get-sprite :setup-scene :get-resource :render :change-map :mstimer :draw-line))");
+  ecl_call("(defpackage engine (:use :cl) (:export :keydown? :get-sprite :setup-scene :get-resource :render :change-map :mstimer :draw-line :set-color))");
   DEFUN("engine:setup-scene", setup_scene, 3);
   DEFUN("engine:get-resource", get_resource, 2);
   DEFUN("engine:render", render, 3);
@@ -20,6 +20,18 @@ void register_callbacks() {
   DEFUN("engine:keydown?", is_keydown, 1);
   DEFUN("engine:mstimer", timer, 0);
   DEFUN("engine:draw-line", draw_line, 5);
+  DEFUN("engine:set-color", set_color, 3);
+}
+
+cl_object set_color(cl_object r, cl_object g, cl_object b) {
+  int rr = ecl_to_int(r),
+    gg = ecl_to_int(g),
+    bb = ecl_to_int(b);
+
+  assert(current_scene);
+  current_scene->setColor(rr,gg,bb);
+
+  return ECL_T;
 }
 
 cl_object draw_line(cl_object x1, cl_object y1, cl_object x2, cl_object y2, cl_object thickness) {

@@ -116,7 +116,9 @@
 
     (render-block *current-block*)
 
-    (draw-line 130 50 50 200 1)))
+    (set-color 123 50 255)
+    (draw-line 130 50 50 200 10)
+    (set-color 0 0 0)))
 
 (defun setup-tetris ()
   (format t "Set up tetris! ~%"))

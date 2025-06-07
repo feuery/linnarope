@@ -41,6 +41,7 @@ class Scene {
 
   // drawing primitives
   void line(int x1, int y1, int x2, int y2, int thickness);
+  void setColor(Uint8 r, Uint8 g, Uint8 b);
 
   // kbd   
   bool is_keydown(std::string& keystr);
