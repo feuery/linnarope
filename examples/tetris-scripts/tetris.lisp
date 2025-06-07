@@ -15,6 +15,7 @@
 
 (defparameter *field-width-blocks* 10)
 (defparameter *field-height-blocks* 20)
+(defparameter *block-w* 50)
 
 (defmethod initialize-instance :after ((b block) &key)
   (assert (member (form b) *valid-blocks*)))
@@ -99,6 +100,9 @@
 
 (defparameter *current-block* nil)
 
+(defparameter map-x 0)
+(defparameter map-y 0)
+
 (defun update (current-map)
   (when *current-block*
 
@@ -112,13 +116,34 @@
     (when (keydown? "SDLK_RIGHT")
       (incf (block-x *current-block*)))
     
-    (render current-map 0 0)
+    (render current-map (decf map-x) (decf map-y))
+
+    (when (< map-x -900)
+      (setf map-x 900))
+
+    (when (< map-y -900)
+      (setf map-y 900))
 
     (render-block *current-block*)
 
-    (set-color 123 50 255)
-    (draw-line 130 50 50 200 10)
+    ;;(format t "Rendering a line from ~a to ~a~%" (list 0 0) (list (* *field-width-blocks* *block-w*) 0))
+    ;; (format t "Rendering a line from ~a to ~a~%"
+    ;; 	     (list 0 0)
+    ;; 	     (list (* *field-width-blocks* *block-w*) (* *field-height-blocks* *block-w*)))
+
+    (set-color 255 0 0)
+    
+    (draw-line 0 0 (* *field-width-blocks* *block-w*) 0 10)
+    (draw-line 0 (* *field-height-blocks* *block-w*)
+	       (* *field-width-blocks* *block-w*) (* *field-height-blocks* *block-w*)
+	       10)
+    (draw-line (* *field-width-blocks* *block-w*) 0
+	       (* *field-width-blocks* *block-w*) (* *field-height-blocks* *block-w*) 10)
+    (draw-line 0 0
+	       0 (* *field-height-blocks* *block-w*) 10)
+
     (set-color 0 0 0)))
+
 
 (defun setup-tetris ()
   (format t "Set up tetris! ~%"))

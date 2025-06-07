@@ -379,7 +379,7 @@ bool Scene::is_keydown(std::string &keystr) {
 
 // returns radians 
 double angl (int x1, int y1, int x2, int y2) {
-  return atan2((x2 - x1), (y2 - y1));
+  return atan((x2 - x1) / (y2 - y1));
 }
 
 void Scene::line(int x1, int y1, int x2, int y2, int thickness) {
@@ -403,6 +403,5 @@ void Scene::line(int x1, int y1, int x2, int y2, int thickness) {
 }
 
 void Scene::setColor(Uint8 r, Uint8 g, Uint8 b) {
-  printf("Set color to %d, %d, %d\n", r, g, b);
   SDL_SetRenderDrawColor(renderer, r, g, b, 255);
 }
