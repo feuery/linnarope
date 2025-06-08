@@ -11,5 +11,4 @@ $(OBJECTS): %.o: src/%.cpp $(HEADERS)
 
 .PHONY: clean
 clean:
-	find . -name '*.o' -delete; \
-	rm exporter
+	rm $(OBJECTS) exporter

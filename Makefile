@@ -1,7 +1,7 @@
 OBJECTS = $(patsubst engine/src/%.cpp,%.o,$(wildcard engine/src/*.cpp))
 HEADERS := $(wildcard engine/headers/*.h)
 
-finropedemo : $(OBJECTS)
+finropedemo : $(OBJECTS) exporter
 	clang++ $(OBJECTS) -o finropedemo $$(sdl2-config --libs) -lpugixml $$(pkg-config --libs sdl2_image) $$(pkg-config --libs sqlite3) -L/opt/homebrew/Cellar/ecl/24.5.10/lib -lecl $$(pkg-config --libs sdl2_ttf)
 
 # wonder if we could grep the dependent #include "headers.h" from the %.cpp
@@ -12,8 +12,7 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 
 .PHONY: clean
 clean:
-	find . -name '*.o' -delete; \
-	rm finropedemo
+	rm $(OBJECTS) finropedemo
 
 # resource manager specific tasks
 
