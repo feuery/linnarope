@@ -10,5 +10,6 @@ cl_object timer();
 cl_object draw_line(cl_object x1, cl_object y1, cl_object x2, cl_object y2,
                     cl_object thickness);
 cl_object set_color(cl_object r, cl_object g, cl_object b);
+cl_object draw_text(cl_object txt, cl_object x, cl_object y);
 
 void register_callbacks();

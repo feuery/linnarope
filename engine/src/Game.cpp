@@ -1,3 +1,4 @@
+#include "SDL_ttf.h"
 #include <app.h>
 #include <finrope.h>
 #include <project.h>
@@ -22,6 +23,12 @@ SDL_Window* App::createWindow(bool hidden) {
     SDL_Log("SDL_Init Error: %s\n", SDL_GetError());
     return nullptr;
   }
+
+  if(TTF_Init() != 0) {
+    SDL_Log("TTF_Init Error: %s\n", TTF_GetError());
+    return nullptr;
+  }
+
 
   SDL_Window* window = SDL_CreateWindow("Hello World SDL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, hidden? SDL_WINDOW_HIDDEN: 
 					SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
@@ -76,6 +83,15 @@ void Game::do_it() {
   Scene scn(proj, renderer);
   current_scene = &scn;
   scn.changeMap(map);
+  
+
+  #ifdef __APPLE__
+  // TODO this is some sort of default arial that comes with mac.
+  // Replace it with a ttf that I can package with this app. 
+  scn.loadFont("/System/Library/Fonts/Supplemental/Arial Unicode.ttf");
+  #else
+  #error Fonts are broken
+  #endif 
   
   
   while (!exit) {

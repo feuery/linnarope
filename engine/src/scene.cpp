@@ -1,5 +1,7 @@
 #include "SDL_render.h"
 #include "SDL_stdinc.h"
+#include "SDL_surface.h"
+#include "SDL_ttf.h"
 #include <cmath>
 #include <ecl/ecl.h>
 #include <handle.h>
@@ -17,7 +19,8 @@ Scene::Scene(Project *p, SDL_Renderer *r): proj(p),
 					   current_startup(ECL_NIL),
 					   current_update(ECL_NIL),
 					   current_teardown(ECL_NIL),
-					   renderer(r)
+					   renderer(r),
+					   current_color({255, 255, 255, 255})
 { }
 
 void Scene::changeMap(Map *m){
@@ -404,4 +407,29 @@ void Scene::line(int x1, int y1, int x2, int y2, int thickness) {
 
 void Scene::setColor(Uint8 r, Uint8 g, Uint8 b) {
   SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+  current_color = {r, g, b, 255};
 }
+
+
+void Scene::loadFont(const char* fontPath) {
+  font = TTF_OpenFont(fontPath, 18);
+
+  if(font) return;
+
+  printf("Error loading font %s: %s\n", fontPath, TTF_GetError());
+  
+  assert(font);
+}
+
+void Scene::drawText(std::string& txt, int x, int y) {
+  SDL_Surface *txt_srfc = TTF_RenderUTF8_Solid(font, txt.c_str(), current_color);
+  assert(txt_srfc);
+
+  SDL_Texture *txt_txt =  SDL_CreateTextureFromSurface(renderer, txt_srfc);
+  SDL_Rect loc = {x, y, txt_srfc->w, txt_srfc->h};
+  SDL_RenderCopy(renderer, txt_txt, nullptr, &loc);
+
+  SDL_DestroyTexture(txt_txt);
+  SDL_FreeSurface(txt_srfc);
+}
+		     
