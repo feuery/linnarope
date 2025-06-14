@@ -6,7 +6,7 @@
 (in-package :examples.tetris)
 
 (defparameter *valid-blocks*
-  (list :square :l :l-reverse :s :s-reverse :straight))
+  (list :square :l :l-reverse :s :s-reverse :straight :single))
 
 (defclass block ()
   ((x :initarg :x :initform (error "wish i had an x") :accessor block-x)
@@ -28,6 +28,7 @@
 
 (defmethod width ((b block))
   (case (form b)
+    (:single 1)
     (:square 2)
     (:straight 1) ;; h = 3
     (:s-reverse 3)
@@ -44,10 +45,69 @@
     (:s 2)
     (:l 3)
     (:l-reverse 3)
+    (:single 1)
     (t (error "unknown block"))))
 
 (defun flatten-once (list)
   (mapcan (lambda (i) i) list))
+
+(defmethod all-block-coords ((bl block))
+  (flatten-once
+   (case (form bl)
+     (:single
+      (loop for x from 0 to 0
+	    collecting
+	    (loop for y from 0 to 0
+		  collecting (cons x y))))
+     (:square
+      ;; 4 blokkia, neliömuodostelmassa
+      (loop for x from 0 to 1
+	    collecting
+	    (loop
+	      for y from 0 to 1
+	      collecting (cons x y))))
+
+     (:straight
+      (loop for x from 0 to 0
+	    collecting
+	    (loop 
+	      for y from 0 to 2			   
+	      collecting (cons x y))))
+
+     (:s-reverse
+      (loop for x from 0 to 2
+	    collecting
+	    (loop 
+	      for y from 0 to 1
+	      when (or (eq x 1)
+		       (and (eq x 2) (eq y 1))
+		       (and (eq x 0) (eq y 0)))
+		collecting (cons x y))))
+
+     (:s
+      (loop for x from 0 to 2
+	    collecting
+	    (loop 
+	      for y from 0 to 1
+	      when (or (eq x 1)
+		       (and (eq x 0 ) (eq y 1))
+		       (and (eq x 2) (eq y 0)))
+		collecting (cons x y))))
+     
+     (:l-reverse 
+      (loop for x from 0 to 1 
+	    collecting
+	    (loop 
+	      for y from 0 to 2
+	      when (or (eq x 1) (eq y 0))
+		collecting (cons x y))))
+     (:l
+      (loop for x from 0 to 1 
+	    collecting
+	    (loop 
+	      for y from 0 to 2
+	      when (or (eq x 0) (eq y 2))
+		collecting (cons x y)))))))
 
 (defun render-block (bl)
   (let ((block-sprite (get-resource "Lisp sprite" "block"))
@@ -57,64 +117,12 @@
       (format t "Rendering without block sprite :/~%"))
     (when block-sprite
       (labels ((draw (coords)
-		 (dolist (coordinate (flatten-once coords))
+		 (dolist (coordinate coords)
 		   (destructuring-bind (x . y) coordinate
 		     (let ((dst-x (+ bl-x (* x 50)))
 			   (dst-y (+ bl-y (* y 50))))
 		       (render block-sprite dst-x dst-y))))))
-	
-	(case (form bl)
-	  (:square
-	   ;; 4 blokkia, neliömuodostelmassa
-	   (draw (loop for x from 0 to 1
-		       collecting
-		       (loop
-			 for y from 0 to 1
-			 collecting (cons x y)))))
-
-	  (:straight
-	   (draw (loop for x from 0 to 0
-		       collecting
-		       (loop 
-			 for y from 0 to 2			   
-			 collecting (cons x y)))))
-
-	  (:s-reverse
-	   (draw (loop for x from 0 to 2
-		       collecting
-		       (loop 
-			 for y from 0 to 1
-			 when (or (eq x 1)
-				  (and (eq x 2) (eq y 1))
-				  (and (eq x 0) (eq y 0)))
-			   collecting (cons x y)))))
-
-	  (:s
-	   (draw (loop for x from 0 to 2
-		       collecting
-		       (loop 
-			 for y from 0 to 1
-			 when (or (eq x 1)
-				  (and (eq x 0 ) (eq y 1))
-				  (and (eq x 2) (eq y 0)))
-			   collecting (cons x y)))))
-	  
-	  (:l-reverse 
-	   (draw
-	    (loop for x from 0 to 1 
-		  collecting
-		  (loop 
-		    for y from 0 to 2
-		    when (or (eq x 1) (eq y 0))
-		      collecting (cons x y)))))
-	  (:l
-	   (draw
-	    (loop for x from 0 to 1 
-		  collecting
-		  (loop 
-		    for y from 0 to 2
-		    when (or (eq x 0) (eq y 2))
-		      collecting (cons x y))))))))))
+	(draw (all-block-coords bl))))))
 
 (defparameter *last-updated* (mstimer))
 
@@ -125,11 +133,32 @@
 
 (defparameter finished? nil)
 
+(defparameter background-blocks (make-hash-table :test 'equal))
+
+(defun merge-and-respawn-block ()
+  (let* ((x (block-x *current-block*))
+	 (y (block-y *current-block*))
+	 (all-block-coordinates (all-block-coords *current-block*)))
+    (dolist (cc all-block-coordinates)
+      (destructuring-bind (x1 . y1) cc
+	(let ((x (+ x x1))
+	      (y (+ y y1)))
+	  (setf (gethash (cons x y) background-blocks) (make-instance 'block :x x :y y :form :single)))))
+
+    
+    (setf *current-block* (make-instance 'block :x 0 :y 0 :form (nth 
+								 (random (length *valid-blocks*))
+								 *valid-blocks*)))))
+  
+
 (defun update-game (current-map)
   (when (> (1+ (+ (block-y *current-block*) (height *current-block*)))
 	   *field-height-blocks*)  
-    (setf finished? t)
-    (return-from update-game))
+    ;; (setf finished? t)
+
+    (merge-and-respawn-block)
+    ;; (return-from update-game)
+    )
 
   (when (> (- (mstimer) *last-updated*) 1000)
     (incf (block-y *current-block*))
@@ -150,11 +179,11 @@
     (setf map-y 900))
 
   (render-block *current-block*)
-  
-  ;;(format t "Rendering a line from ~a to ~a~%" (list 0 0) (list (* *field-width-blocks* *block-w*) 0))
-  ;; (format t "Rendering a line from ~a to ~a~%"
-  ;; 	     (list 0 0)
-  ;; 	     (list (* *field-width-blocks* *block-w*) (* *field-height-blocks* *block-w*)))
+
+  ;; draw the background
+  (maphash (lambda (coordinates block) 
+	     (render-block block))
+	   background-blocks)
 
   (set-color 255 0 0)
   
