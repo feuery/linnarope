@@ -151,25 +151,35 @@
 								 *valid-blocks*)))))
 
 
-(defun block-collides-with-earth () 
-  (> (1+ (+ (block-y *current-block*) (height *current-block*)))
-     *field-height-blocks*))
+(defun block-collides-with-earth ()
+  (when *current-block*
+    (> (1+ (+ (block-y *current-block*) (height *current-block*)))
+       *field-height-blocks*)))
 
 (defun block-collides-with-other-block ()
-  (let* ((x (block-x *current-block*))
-	 (y (1+ (block-y *current-block*)))
-	 (contained-blocks (map 'list (lambda (p)
-					(destructuring-bind (xx . yy) p
-					  (cons (+ x xx)
-						(+ y yy))))
-				(all-block-coords *current-block*))))
-    (dolist (c contained-blocks)
-      (maphash (lambda (bg-coord blocks)
-		 (declare (ignore blocks))
-		 (when (equalp c bg-coord)
-		   (return-from block-collides-with-other-block t)))
-	       background-blocks))
-    nil))    
+  (when *current-block*
+    (let* ((x (block-x *current-block*))
+	   (y (1+ (block-y *current-block*)))
+	   (contained-blocks (map 'list (lambda (p)
+					  (destructuring-bind (xx . yy) p
+					    (cons (+ x xx)
+						  (+ y yy))))
+				  (all-block-coords *current-block*))))
+      (dolist (c contained-blocks)
+	(maphash (lambda (bg-coord blocks)
+		   (declare (ignore blocks))
+		   (when (equalp c bg-coord)
+		     (return-from block-collides-with-other-block t)))
+		 background-blocks))
+      nil)))
+
+(defun block-on-left-edge? ()
+  (zerop (block-x *current-block*)))
+
+(defun block-on-right-edge? ()
+  (> (+ (block-x *current-block*)
+	(width *current-block*))
+     (1- *field-width-blocks*)))
 
 (defun update-game (current-map)
   (when (or (block-collides-with-earth)
@@ -184,11 +194,15 @@
     (incf (block-y *current-block*))
     (setf *last-updated* (mstimer)))
 
-  (when (keydown? "SDLK_LEFT")
+  (when (and (not (block-on-left-edge?))
+	     (keydown? "SDLK_LEFT"))
     (decf (block-x *current-block*)))
 
-  (when (keydown? "SDLK_RIGHT")
+  (when (and (not (block-on-right-edge?))
+	     (keydown? "SDLK_RIGHT"))
     (incf (block-x *current-block*)))
+
+  ;; (format t "block-x ~d~%" (block-x *current-block*))
   
   (render current-map (decf map-x) (decf map-y))
 
