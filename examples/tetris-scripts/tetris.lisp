@@ -149,11 +149,31 @@
     (setf *current-block* (make-instance 'block :x 0 :y 0 :form (nth 
 								 (random (length *valid-blocks*))
 								 *valid-blocks*)))))
-  
+
+
+(defun block-collides-with-earth () 
+  (> (1+ (+ (block-y *current-block*) (height *current-block*)))
+     *field-height-blocks*))
+
+(defun block-collides-with-other-block ()
+  (let* ((x (block-x *current-block*))
+	 (y (1+ (block-y *current-block*)))
+	 (contained-blocks (map 'list (lambda (p)
+					(destructuring-bind (xx . yy) p
+					  (cons (+ x xx)
+						(+ y yy))))
+				(all-block-coords *current-block*))))
+    (dolist (c contained-blocks)
+      (maphash (lambda (bg-coord blocks)
+		 (declare (ignore blocks))
+		 (when (equalp c bg-coord)
+		   (return-from block-collides-with-other-block t)))
+	       background-blocks))
+    nil))    
 
 (defun update-game (current-map)
-  (when (> (1+ (+ (block-y *current-block*) (height *current-block*)))
-	   *field-height-blocks*)  
+  (when (or (block-collides-with-earth)
+	    (block-collides-with-other-block))
     ;; (setf finished? t)
 
     (merge-and-respawn-block)
