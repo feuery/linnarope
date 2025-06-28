@@ -1,3 +1,4 @@
+#include "SDL_keycode.h"
 #include "SDL_render.h"
 #include "SDL_stdinc.h"
 #include "SDL_surface.h"
@@ -92,8 +93,15 @@ SDL_PixelFormat* Scene::currentFormat() {
   return current_map->rendered_map->format;
 }
 
-void Scene::setKeydown(SDL_Keycode cde) { keystate[cde] = true; }
-void Scene::setKeyup(SDL_Keycode cde) { keystate[cde] = false; }
+void Scene::setKeydown(SDL_Keycode cde)
+{
+  keystate[cde] = true;
+}
+
+void Scene::setKeyup(SDL_Keycode cde)
+{
+  keystate[cde] = false;
+}
 
 static std::unordered_map<std::string, SDL_Keycode> keycodes = {
     {"SDLK_UNKNOWN", SDLK_UNKNOWN},
@@ -359,7 +367,7 @@ static std::unordered_map<std::string, SDL_Keycode> keycodes = {
     {"SDLK_CALL", SDLK_CALL},
     {"SDLK_ENDCALL", SDLK_ENDCALL}};
 
-std::unordered_map<SDL_Keycode, int> key_last_queried;
+std::unordered_map<SDL_Keycode, long> key_last_queried;
   
 
 SDL_Keycode translate(std::string &str) {
@@ -368,13 +376,19 @@ SDL_Keycode translate(std::string &str) {
 
 bool Scene::is_keydown(std::string &keystr) {
   auto keycode = translate(keystr);
-  int timer = mstimer();
-
-    // printf("Is %d < %d? %s\n", timer - key_last_queried[keycode], 600, (timer - key_last_queried[keycode] < 600? " is": " isn't"));
   
-  bool result = (timer - key_last_queried[keycode]) < 600?
-    false:
-    keystate[keycode];
+  long timer = mstimer();
+  bool result = false;
+
+  long last_queried = key_last_queried[keycode];
+
+  if ((timer - last_queried) < 600l) {
+    // printf("Less than 600ms from %d the time key was last down\n", last_queried);
+    // printf("Timers is %ld\n", timer);
+  }
+  else {
+    result = keystate[keycode];
+  }
 
   if(result) { key_last_queried[keycode] = timer;}
   return result;

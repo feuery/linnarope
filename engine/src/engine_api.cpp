@@ -114,8 +114,10 @@ cl_object change_map(cl_object map_handle) {
 cl_object is_keydown(cl_object keystr) {
   std::string std_keystr = ecl_string_to_string(keystr);
   assert(current_scene);
+
+  bool is_keydown = current_scene->is_keydown(std_keystr);
   
-  return current_scene->is_keydown(std_keystr) ? ECL_T: ECL_NIL;
+  return is_keydown ? ECL_T: ECL_NIL;
 }
 
 cl_object timer() {
