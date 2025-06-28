@@ -26,4 +26,6 @@ resource-manager: exporter
 	sbcl --load ./resource_handler/resource-handler.asd --eval '(asdf:make "linnarope-resource-handler")' --eval '(linnarope.main:start-server)'
 
 example-tetris: finropedemo
+	./finropedemo --game ./examples/tetris-scripts/linnarope-export.game --import-scripts-from ./examples/tetris-scripts
+	echo Ran import
 	./finropedemo --game ./examples/tetris-scripts/linnarope-export.game 

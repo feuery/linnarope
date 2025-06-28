@@ -35,6 +35,11 @@ void ScriptImport::do_it() {
     std::string script_fname = src_dir+"/"+p.filename().string(),
       script_contents = get_file_contents(script_fname.c_str());
 
+    if(!script_fname.ends_with(".lisp")) {
+      printf("%s doesn't end with .lisp, skipping\n", script_fname.c_str());
+      continue;
+    }
+
     std::string upsert = "INSERT INTO script (name, script) VALUES (?, ?) ON CONFLICT DO UPDATE SET script = excluded.script";
     sqlite3_prepare_v2(db, upsert.c_str(), upsert.size(), &stmt, nullptr);
 
