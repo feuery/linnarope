@@ -1,0 +1,25 @@
+name: Build 
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  macos-build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: make deps 
+    - name: make
+      run: make
+    - name: release
+      uses: actions/upload-artifact@v4
+      with:
+        name: Mac release 
+        path: ./finropedemo
+        if-no-files-found: error 
+        retention-days: 1 
+        overwrite: true
