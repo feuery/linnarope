@@ -829,7 +829,7 @@ void generate_drawing_context(Project *proj, Map *m, drawing_state *ctx, SDL_Ren
 }
 
 void eval(Script* scr) {
-  std::string form = "(progn " + scr->script + ")";
+  std::string form =  scr->script;
   printf("Entry script is: %s\n", form.c_str());
   ecl_call(form.c_str());
 }
