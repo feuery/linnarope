@@ -120,7 +120,7 @@
 
 (defun render-block (bl)
   (when bl
-    (let ((block-sprite (engine:get-resource "Lisp sprite" "block"))
+    (let ((block-sprite (get-resource "Lisp sprite" "block"))
 	  (bl-x (* 50 (block-x bl)))
 	  (bl-y (* 50 (block-y bl))))
       (unless block-sprite
@@ -131,10 +131,10 @@
 		     (destructuring-bind (x . y) coordinate
 		       (let ((dst-x (+ bl-x (* x 50)))
 			     (dst-y (+ bl-y (* y 50))))
-			 (engine:render block-sprite dst-x dst-y))))))
+			 (render block-sprite dst-x dst-y))))))
 	  (draw (all-block-coords bl)))))))
 
-(defparameter *last-updated* (engine:mstimer))
+(defparameter *last-updated* nil)
 
 (defparameter *current-block* nil)
 
@@ -158,12 +158,9 @@
 	  (setf (gethash (cons x y) background-blocks) (make-instance 'block :x x :y y :form :single)))))
 
     
-    (setf *current-block* (make-instance 'block :x 0 :y 0 :form :square ;; (nth 
-								 ;; (random (length *valid-blocks*))
-								 ;; *valid-blocks*)
-					 ))))
-
-;; (incf (block-y *current-block*))
+    (setf *current-block* (make-instance 'block :x 0 :y 0 :form  (nth 
+								  (random (length *valid-blocks*))
+								  *valid-blocks*)))))
 
 
 (defun block-collides-with-earth ()
@@ -198,27 +195,29 @@
 
 (defun draw-background ()
   (maphash (lambda (coordinates block)
-	     (declare (ignore coordinates))
-	     (when block
-	       (render-block block)))
+	     (destructuring-bind (x . y) coordinates
+	       (when block
+		 (setf (block-x block) x)
+		 (setf (block-y block) y)
+		 (render-block block))))
 	   background-blocks)
 
-  (engine:set-color 255 0 0)
+  (set-color 255 0 0)
   
-  (engine:draw-line 0 0 (* *field-width-blocks* *block-w*) 0 10)
-  (engine:draw-line 0 (* *field-height-blocks* *block-w*)
+  (draw-line 0 0 (* *field-width-blocks* *block-w*) 0 10)
+  (draw-line 0 (* *field-height-blocks* *block-w*)
 	     (* *field-width-blocks* *block-w*) (* *field-height-blocks* *block-w*)
 	     10)
-  (engine:draw-line (* *field-width-blocks* *block-w*) 0
+  (draw-line (* *field-width-blocks* *block-w*) 0
 	     (* *field-width-blocks* *block-w*) (* *field-height-blocks* *block-w*) 10)
-  (engine:draw-line 0 0
+  (draw-line 0 0
 	     0 (* *field-height-blocks* *block-w*) 10)
 
-  (engine:set-color 0 0 0))
+  (set-color 0 0 0))
 
 (defun do-stupid-stuff-with-map (current-map)
   
-  (engine:render current-map (decf map-x) (decf map-y))
+  (render current-map (decf map-x) (decf map-y))
 
   (when (< map-x -900)
     (setf map-x 900))
@@ -228,14 +227,42 @@
 
 (defun handle-kbd ()
   (if (and (not (block-on-left-edge?))
-	   (engine:keydown? "SDLK_LEFT"))
+	   (keydown? "SDLK_LEFT"))
       (decf (block-x *current-block*))
       )
 
   (when (and (not (block-on-right-edge?))
-	     (engine:keydown? "SDLK_RIGHT"))
+	     (keydown? "SDLK_RIGHT"))
     
     (incf (block-x *current-block*))))
+
+(defun mov (old-index new-index)
+  (let ((block* (gethash old-index background-blocks )))
+    (when block*
+      (remhash old-index background-blocks)
+      (setf (gethash new-index background-blocks) block*))))
+
+(defun kill-row-and-move-stuff-down (y)
+  (dotimes (x *field-width-blocks*)
+    (format t "Removing block at ~a, ~a~%" x y)
+    (remhash (cons x y) background-blocks))
+  
+  ;; (dotimes (yy y)
+  ;; 	(dotimes (x *field-width-blocks*)
+  ;; 	  (let ((block* (gethash (cons x yy) background-blocks)))
+  ;; 	    (remhash (cons x yy) background-blocks)
+  ;; 	    (setf (gethash (cons x (1+ yy)
+  
+  (dotimes (yy y)
+    ;; we're moving blocks down bottoms-up
+    (let ((actual-y-index (- y yy)))
+      (format t "We're moving blocks at y ~a~%" actual-y-index)
+      (dotimes (x *field-width-blocks*)
+	(let ((block* (gethash (cons x actual-y-index) background-blocks)))
+	  (when block*
+
+	    (mov (cons x actual-y-index)
+		 (cons x (1+ actual-y-index)))))))))
 
 (defun handle-full-rows ()
   "Checks if there are completely filled horizontal rows that need to disappear. If there are, this function makes them disappear"
@@ -252,32 +279,7 @@
     ;;   (format t "Rows ~a seem to be full~%" acc))
 
     (dolist (y acc)
-      (dotimes (x *field-width-blocks*)
-	(format t "Removing block at ~a, ~a~%" x y)
-	(remhash (cons x y) background-blocks))
-      
-      ;; (dotimes (yy y)
-      ;; 	(dotimes (x *field-width-blocks*)
-      ;; 	  (let ((block* (gethash (cons x yy) background-blocks)))
-      ;; 	    (remhash (cons x yy) background-blocks)
-      ;; 	    (setf (gethash (cons x (1+ yy)
-      
-      (dotimes (yy y)
-	;; we're moving blocks down bottoms-up
-	(let ((actual-y-index (- y yy)))
-	  (format t "We're moving blocks at y ~a~%" actual-y-index)
-	  (dotimes (x *field-width-blocks*)
-	    (let ((block* (gethash (cons x actual-y-index) background-blocks)))
-	      (if block*
-		  (progn
-		    (format t "Moving stuff up from ~a => ~a~%" actual-y-index (1+ actual-y-index))
-		    ;; why does this fuck everything up?
-		    (remhash (cons x actual-y-index) background-blocks)
-		    (setf (gethash (cons x (1+ actual-y-index)) background-blocks) block*))
-
-		  ;; this is expected 
-		  ;; (format t "Wtf no block at ~a~%" (cons x actual-y-index))
-		  ))))))))
+      (kill-row-and-move-stuff-down y))))
 
 (defun update-game (current-map)
 
@@ -291,9 +293,9 @@
     ;; (return-from update-game)
     )
 
-  (when (> (- (engine:mstimer) *last-updated*) 1000)
+  (when (> (- (mstimer) *last-updated*) 1000)
     (incf (block-y *current-block*))
-    (setf *last-updated* (engine:mstimer)))
+    (setf *last-updated* (mstimer)))
 
   (handle-kbd)
 
@@ -307,9 +309,9 @@
   (draw-background))
 
 (defun update-finished ()
-  (engine:set-color 255 0 0)
-  (engine:draw-text "FINISHED!" 100 100)
-  (engine:set-color 0 0 0))
+  (set-color 255 0 0)
+  (draw-text "FINISHED!" 100 100)
+  (set-color 0 0 0))
     
 (defun update (current-map)
   (when *current-block*
@@ -318,11 +320,11 @@
 	(update-game current-map))))
 
 (defun setup-tetris ()
+  (setf *last-updated* (mstimer))
+  (setf *current-block* (make-instance 'block :x 0 :y 0 :form :square))
   (format t "Set up tetris! ~%"))
 
-(setf *current-block* (make-instance 'block :x 0 :y 0 :form :square))
-
-(engine:setup-scene
+(setup-scene
  ;; I think setup fns are completely unnecessary 
  #'setup-tetris
  #'update
