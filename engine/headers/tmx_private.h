@@ -6,6 +6,7 @@
 
 #include <tmxreader.h>
 #include <sqlite3.h>
+#include <variant>
 
 class Resource {
 public:

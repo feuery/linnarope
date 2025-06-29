@@ -2,6 +2,8 @@
 #include <project.h>
 #include <cassert>
 #include <vector>
+#include <stdexcept>
+#include <algorithm>
 
 void Project::insertScript(int id, const char *name, Script scr) {
   scripts[name] = scr;

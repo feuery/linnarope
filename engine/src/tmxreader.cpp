@@ -16,6 +16,7 @@
 #include <swank.h>
 #include <project.h>
 #include <lib_fixup.h>
+#include <algorithm>
 
 Script::Script(Script &scr) : name(scr.name), script(scr.script) {}
 Script::Script(std::string &nme, std::string &scr): name(nme), script(scr) {}

@@ -89,6 +89,10 @@ void Game::do_it() {
   // TODO this is some sort of default arial that comes with mac.
   // Replace it with a ttf that I can package with this app. 
   scn.loadFont("/System/Library/Fonts/Supplemental/Arial Unicode.ttf");
+
+  #elif __linux__
+  // this exists on arch linux, hopefully it does everywhere else __linux__ is defined too 
+  scn.loadFont("/usr/share/fonts/TTF/OpenSans-Regular.ttf");  
   #else
   #error Fonts are broken
   #endif 

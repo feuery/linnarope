@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <swank.h>
 #include <scene.h>
+#include <stdexcept>
 
 cl_object render(cl_object handle, cl_object x_, cl_object y_);
 

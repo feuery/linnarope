@@ -2,13 +2,18 @@ OBJECTS = $(patsubst engine/src/%.cpp,%.o,$(wildcard engine/src/*.cpp))
 HEADERS := $(wildcard engine/headers/*.h)
 
 finropedemo : $(OBJECTS) exporter
-	clang++ $(OBJECTS) -o finropedemo $$(sdl2-config --libs) -lpugixml $$(pkg-config --libs sdl2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs sdl2_ttf)
+	clang++ $(OBJECTS) -o finropedemo $$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs SDL2_ttf)
 
 # wonder if we could grep the dependent #include "headers.h" from the %.cpp
 $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
-	clang++ $< -Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/headers -I/usr/local/include -I/opt/homebrew/Cellar/sdl2_image/2.8.2_1/include/ $$(pkg-config --cflags sdl2_image) $$(ecl-config --cflags) $$(pkg-config nlohmann_json --cflags) $$(pkg-config --cflags sdl2_ttf)
+	clang++ $< -Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/headers -I/usr/local/include $$(pkg-config --cflags SDL2_image) $$(ecl-config --cflags) $$(pkg-config nlohmann_json --cflags) $$(pkg-config --cflags SDL2_ttf)
 
-# $< contains the matched file 
+# $< contains the matched file
+
+# install dependencies
+.PHONY: deps
+deps:
+	./install_dependencies.sh
 
 .PHONY: clean
 clean:
