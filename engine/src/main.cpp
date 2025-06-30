@@ -11,10 +11,6 @@
 #include <project.h>
 #include <app.h>
 
-Scene *current_scene = nullptr;
-SDL_Renderer *current_renderer = nullptr;
-
-
 void freeApp(App *app) { delete app; }
 
 App* getApp (int argc, char **argv) {
@@ -92,6 +88,7 @@ App* getApp (int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
+  puts("Väärä main");
   App* app = getApp(argc, argv);
   app->do_it();
   freeApp(app);

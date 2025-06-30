@@ -16,6 +16,10 @@
 #include <unordered_map>
 #include <ropetimer.h>
 
+// these two are moved from main.o 
+Scene *current_scene = nullptr;
+SDL_Renderer *current_renderer = nullptr;
+
 Scene::Scene(Project *p, SDL_Renderer *r): proj(p), 
 					   current_startup(ECL_NIL),
 					   current_update(ECL_NIL),

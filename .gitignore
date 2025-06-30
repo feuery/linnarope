@@ -24,3 +24,4 @@ maps/*.tiled-session
 /resource_handler/exporter/ilpotestaa
 /resource_handler/exporter/.cache/
 *.fas
+/finropedemotests
