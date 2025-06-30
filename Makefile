@@ -28,8 +28,8 @@ tests: $(TEST_OBJS) $(OBJECTS)
 test: tests
 	./finropedemotests
 
-test-junit: tests
-	./finropedemotests --reporter JUnit
+test-junit-gha: tests
+	./finropedemotests --reporter JUnit::out=result-junit.xml
 
 $(TEST_OBJS): %.o: engine/test/src/%.cpp $(TEST_HEADERS)
 	clang++ $< $(TEST_CFLAGS)
