@@ -70,6 +70,9 @@ bool Tileset::generate_tile_surfaces () {
   tile_surfaces.clear();
   linear_tile_surfaces.clear();
 
+  tileset_width = src_surface->w / tilewidth;
+  tileset_height = src_surface->h / tileheight;
+
   for(int y = 0; y < src_surface->h / tileheight; y++) {
     std::vector<SDL_Surface*> row;
     for(int x = 0; x < src_surface->w / tilewidth; x++) {
@@ -173,6 +176,9 @@ std::tuple<int, const void*> load_img_binary(sqlite3* db, std::string &image_fil
 
   return {_sizeof, blob};
 }
+
+int Tileset::width() { return this->tileset_width; }
+int Tileset::height() { return tileset_height; }
 
 Tileset::~Tileset() {}
 

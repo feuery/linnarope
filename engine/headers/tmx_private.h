@@ -49,6 +49,7 @@ private:
 
   // source attribute of a <tileset>'s hopefully only <image> tag
   std::string imgsource;
+  int tileset_width, tileset_height;
   
 public:
   int firstgid;
@@ -75,6 +76,9 @@ public:
 
   SDL_Surface* tileAt(int x, int y);
   SDL_Surface* tileAt(int local_id);
+
+  int width();
+  int height();
 
   ~Tileset();
 };

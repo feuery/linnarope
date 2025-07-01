@@ -448,6 +448,7 @@ Map tmx_to_map(const char *tmx_data) {
     Encoding encoding = std::string(data.attribute("encoding").as_string()) == "csv" ? CSV: EncodingError;
 
     assert(encoding == CSV);
+    l.enc = encoding;
 
     auto chunks = data.children("chunk");
 
