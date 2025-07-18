@@ -19,4 +19,8 @@
       "file": "src/sprite_import.cpp"},
     { "directory": "/Users/feuer/Projects/finrope/resource_handler/exporter",
       "arguments": ["/opt/homebrew/opt/llvm/bin/clang", "-g", "-std=c++20", "-O0", "-c", "-Iheaders", "-I/usr/local/include", "-I/opt/homebrew/Cellar/libpqxx/7.10.0/include", "-I/usr/local/include"],
-      "file": "src/script.cpp"}]
+      "file": "src/script.cpp"},
+
+{ "directory": "/Users/feuer/Projects/finrope/resource_handler/exporter",
+  "arguments": ["/opt/homebrew/opt/llvm/bin/clang", "-g", "-std=c++20", "-O0", "-c", "-Iheaders", "-I/usr/local/include", "-I/opt/homebrew/Cellar/libpqxx/7.10.0/include", "-I/usr/local/include", "-I/opt/homebrew/Cellar/catch2/3.8.1/include"],
+      "file": "test/src/sprite_test.cpp"}]

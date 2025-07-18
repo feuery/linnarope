@@ -25,3 +25,4 @@ maps/*.tiled-session
 /resource_handler/exporter/.cache/
 *.fas
 /finropedemotests
+/resource_handler/exporter/exporter_test
