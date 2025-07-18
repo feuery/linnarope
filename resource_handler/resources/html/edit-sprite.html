@@ -51,15 +51,14 @@
      return acc;
  }
  
- let real_pixels = pixels_to_2d(pixels);
  let background_color = "#FF0000";
  
  function pixels_w() {
-     return real_pixels[0].length;
+     return pixels[0].length;
  }
  
  function pixels_h() {
-     return real_pixels.length;
+     return pixels.length;
  }
  
  
@@ -69,14 +68,14 @@
      ctx.fillStyle = background_color;
      ctx.fillRect(0, 0, canvas.width, canvas.height);
      
-     const w = real_pixels[0].length,
-	   h = real_pixels.length;
+     const w = pixels[0].length,
+	   h = pixels.length;
      
      console.log(`size is ${w}, ${h}`);
      
      for (let y = 0; y < h; y++) {
 	 for (let x = 0; x < w; x++) {
-	     let index = real_pixels[y][x];
+	     let index = pixels[y][x];
 	     let color = palette[index];
 	     
 	     ctx.fillStyle = color;
@@ -122,8 +121,8 @@
 	 for(let y = smaller_y; y < higher_y; y++) {
 	     big_undo_frame.frames.push({x: x,
 					 y: y,
-					 old_color_index: real_pixels[y][x]});
-	     real_pixels[y][x] = color_index;
+					 old_color_index: pixels[y][x]});
+	     pixels[y][x] = color_index;
 	 }
      }
 
@@ -160,23 +159,23 @@
 	 let top_element = undoStack[undoStack.length - 1];
 	 let new_undo_frame = {x: x,
 			       y: y,
-			       old_color_index: real_pixels[y][x]};
+			       old_color_index: pixels[y][x]};
 	 if (top_element == new_undo_frame) return;
 
 	 undoStack.push(new_undo_frame);
 	 updateUndoStackView();
 	 
-	 real_pixels[y][x] = color_index;
+	 pixels[y][x] = color_index;
 	 draw(canvas, ctx, pix_w, pix_h);
 	 console.log('drawn');
      }),
       'fill': makeSimpleTool((pix_w, pix_h, e) => {
-	  const w = real_pixels[0].length,
-		h = real_pixels.length;
+	  const w = pixels[0].length,
+		h = pixels.length;
 	  
 	  for(let x = 0; x < w; x++) {
 	      for(let y = 0; y < h; y++) {
-		  real_pixels[y][x] = color_index;
+		  pixels[y][x] = color_index;
 	      }
 	  }
 
@@ -310,7 +309,7 @@
      document.querySelector('#save_sprite').addEventListener('click', async function (_) {
 	 let resp = await fetch('/save-lisp-sprite/{{id}}', {
 	     method: 'POST',
-	     body: JSON.stringify(real_pixels)
+	     body: JSON.stringify(pixels)
 	 });
 	 if (resp.status != 204) {
 	     let txt = await resp.text();
@@ -372,7 +371,7 @@
 
 	     let handle = (frame) => {
 		 let {x, y, old_color_index} = frame;
-		 real_pixels[y][x] = old_color_index;
+		 pixels[y][x] = old_color_index;
 	     }
 
 	     if(top_frame.kind == 'big') {

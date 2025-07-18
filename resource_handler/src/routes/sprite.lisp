@@ -10,35 +10,24 @@
 
 (defroute lispsprite-saver ("/new-lisp-sprite" :method :post :decorators (@db)) ()
   (with-keys ("name" "w" "h" "palette_id") (read-arrayed-form)
-    (let* ((row (aref (postmodern:query "INSERT INTO lisp_sprite (name, w, h, palette_id) VALUES ($1, $2, $3, $4) returning id" 
-					name w h palette_id :array-hash) 0))
+    (let* ((ww (parse-integer w))
+	   (hh (parse-integer h))
+
+	   (pixels (let ((acc))
+		     (dotimes (x ww)
+		       (push (lisp-fixup:range hh) acc))
+		     acc))
+
+	   (row (aref (postmodern:query "INSERT INTO lisp_sprite (name, w, h, palette_id, pixels) VALUES ($1, $2, $3, $4, $5) returning id" 
+					name w h palette_id (json:stringify pixels) :array-hash) 0))
 	   (sprite-id (gethash "id" row)))
       (assert sprite-id)
-      (let ((ww (parse-integer w))
-	    (hh (parse-integer h)))
-	(dotimes (x ww)
-	  (dotimes (y hh)
-	    (postmodern:execute
-	     "INSERT INTO lisp_sprite_pixel (sprite_id, x, y ) VALUES ($1, $2, $3)"
-	     sprite-id x y))))
       (redirect 'linnarope.views.sprite:sprites))))
 
 (defroute lisp-sprite-editor ("/save-lisp-sprite/:id" :method :post :decorators (@db)) ()
-  (let* ((body (hunchentoot:raw-post-data :force-text t))
-	 (res (aref (postmodern:query "SELECT w, h FROM lisp_sprite WHERE id = $1" id :array-hash) 0))
-	 (w (gethash "w" res))
-	 (h (gethash "h" res))
-	 (pixels (json:parse body)))
-    
-    (assert (and w h))
-    (dotimes (x w)
-      (dotimes (y h)
-	(let ((pix (aref (aref pixels y) x)))
-	  (postmodern:execute "UPDATE lisp_sprite_pixel SET color_index = $1 WHERE sprite_id = $2 AND x = $3 AND y = $4"
-			      pix id x y))))
-    
-    (setf (hunchentoot:return-code*) 204)
-    ""))
+  (postmodern:execute "UPDATE lisp_sprite SET pixels = $1 WHERE id = $2" (hunchentoot:raw-post-data :force-text t) id)
+  (setf (hunchentoot:return-code*) 204)
+  "")
 
 (defroute palette-changer ("/sprite/:id/change-palette" :method :post :decorators (@db)) ()
   (let* ((body (json:parse (hunchentoot:raw-post-data :force-text t)))

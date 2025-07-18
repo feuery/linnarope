@@ -2,11 +2,6 @@
 #include <string>
 #include <app.h>
 
-const char *user = "linnarope", *password = "linnarope", *db = "linnarope";
-
-#define connection_string()                                                    \
-  std::string("postgresql://") + user + ":" + password + "@localhost:5432/" + db
-
 int main(int argc, char **argv) {
 
   App *app;

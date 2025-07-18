@@ -1,50 +1,146 @@
+#include <cstddef>
+#include <teardowner.h>
 #include <catch2/catch_test_macros.hpp>
-#include <cstdio>
-#include <functional>
+#include <pqxx/pqxx>
+#include <string>
+#include <sqlite3.h>
+#include <app.h>
+#include <unistd.h>
 
-class Teardowner {
-  std::function<void()> lambda;
+std::string get_file_contents(const char *filename) {
 
-public:
+  FILE *fp = fopen(filename, "rb");
+  if (fp)
+  {
+    std::string contents;
+    fseek(fp, 0, SEEK_END);
+    contents.resize(ftell(fp));
+    rewind(fp);
+    fread(&contents[0], 1, contents.size(), fp);
+    fclose(fp);
+    return(contents);
+  }
 
-  Teardowner(std::function<void()> l);
-
-  ~Teardowner();
-};
-
-Teardowner::Teardowner(std::function<void()> l) : lambda(l) {};
-Teardowner::~Teardowner() {
-  lambda();
+  printf("get_file_contents('%s'); failed\n", filename);
+  throw(errno);
 }
 
-TEST_CASE("Toimiiks?") {
-  std::vector<int> vec;
-  vec.push_back(55);
 
-  Teardowner t([]() { puts("Running teardown"); });
+void setup_test_db(pqxx::work &tx) {
+  tx.exec(get_file_contents("../resources/sql/postgres-migrations.sql")).no_rows();
+}
+
+void setup_sprites (pqxx::work& tx) {
+
   
-  SECTION("sec1") {
-    REQUIRE (255 == 255);
+  
+ std::string insert_sprite_query = R"(INSERT INTO lisp_sprite (id, name, w, h, palette_id, pixels)
+ VALUES
+($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING)",
+   insert_palette_query = R"(INSERT INTO palette
+(id, name, color_array)
+ VALUES
+($1, $2, $3) ON CONFLICT DO NOTHING)";
 
-    vec.push_back(23);
-    vec.push_back(24);
+ pqxx::params sprite_params;
+ sprite_params.append(0);
+ sprite_params.append("testisprite");
+ sprite_params.append(4);
+ sprite_params.append(4);
+ // palette_id
+ sprite_params.append(0);
+ sprite_params.append("[[0, 1, 2, 3], [0, 4, 4, 4], [4, 4, 2, 3], [0, 3, 4, 3], [0, 3, 4, 3], [0, 3, 4, 3], [0, 3, 4, 3], [3, 3, 4, 3], [3, 3, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]]");
+
+
+ pqxx::params palette_params;
+ palette_params.append(0);
+ palette_params.append("testipaletti");
+ palette_params.append(R"(["#000000", "#ffffff", "#ff2600", "#0433ff", "#00f900"])");
+
+ puts("calling insert_palette");
+ tx.exec(insert_palette_query, palette_params);
+
+ puts("calling insert_sprites");
+ tx.exec(insert_sprite_query, sprite_params);
+ 
+}
+
+TEST_CASE("test exporting and de-exporting sprites") {
+
+  std::string test_sqlite_url = "./test.export",
+    psql_connstring = test_connection_string();
+
+  Teardowner t([&]() {
+    puts("Trying to remove sqlite");
+    if (access(test_sqlite_url.c_str(), F_OK) == 0) {
+      remove(test_sqlite_url.c_str());
+      puts("Removed sqlite");
+    }	
+  });
+  
+  
+  printf("Using test postgres in %s\n", psql_connstring.c_str());
+  pqxx::connection c(psql_connstring);
+  pqxx::work tx {c};
+  
+  setup_test_db(tx);
+  puts("setup_test_db succeeded");
+
+  setup_sprites(tx);
+  puts("setup_sprites() succeeded");
+
+  auto [sprite_count] = *tx.query<int>("SELECT COUNT(*) FROM lisp_sprite").begin();
+  auto [palette_count] = *tx.query<int>("SELECT COUNT(*) FROM palette").begin();
+
+  REQUIRE(sprite_count == 1);
+  REQUIRE(palette_count == 1);
+
+  tx.commit();
+
+  SECTION("test export") {
+
+    // sqlite export doesn't exist
+    REQUIRE(access(test_sqlite_url.c_str(), F_OK) != 0);
+    Exporter ex;
+
+    ex.do_it(psql_connstring, test_sqlite_url);
+
+    // sqlite export exists
+    REQUIRE(access(test_sqlite_url.c_str(), F_OK) == 0);
+
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+
+    Teardowner t ([&]() {
+      sqlite3_finalize(stmt);
+      sqlite3_close_v2(db);
+    });
     
-    puts("Vec contains:");
-    for(auto a: vec) printf("%d, ", a);
-    puts("");
-  }
-
-  SECTION("sec2") {
-
-        vec.push_back(25);
-    vec.push_back(26);
     
-    puts("Vec contains:");
-    for(auto a: vec) printf("%d, ", a);
-    puts("");
+    sqlite3_open(test_sqlite_url.c_str(), &db);
+    std::string sprite_pixels_q = "SELECT pixels FROM lisp_sprite WHERE id = 0";
 
-    REQUIRE(23 == 24);
+    sqlite3_prepare_v2(db, sprite_pixels_q.c_str(), sprite_pixels_q.size(), &stmt, nullptr);
 
-    puts("päästäänkö tänne?");
+    int step_res;
+    int c = 0;
+    while((step_res = sqlite3_step(stmt)) == SQLITE_ROW) {
+      auto pixels_ = sqlite3_column_text(stmt, 0);
+      std::string pixels(reinterpret_cast<const char*>(pixels_));
+
+      REQUIRE(pixels == "[[0, 1, 2, 3], [0, 4, 4, 4], [4, 4, 2, 3], [0, 3, 4, 3], [0, 3, 4, 3], [0, 3, 4, 3], [0, 3, 4, 3], [3, 3, 4, 3], [3, 3, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]]");
+      c++;
+    }
+
+    if (step_res == SQLITE_ERROR) {
+      printf("sqlite error: %s\n", sqlite3_errmsg(db));
+    }
+    
+    REQUIRE(c == 1); 		// should've found a single row
+
+
+    // TODO what if we pull the export back without emptying psql?
+    // TODO what if wwe re-export it with the same name? Will the data stay intact?
   }
+  
 }

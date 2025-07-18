@@ -90,53 +90,6 @@ bool import_palettes(pqxx::work &tx, sqlite3 *db)  {
   sqlite3_finalize(stmt);
   return true;
 }
-
-
-  
-bool import_lisp_sprite_pixels(pqxx::work &tx, sqlite3 *db) {  
-  sqlite3_stmt *stmt;
-  std::string query_all = "SELECT id, sprite_id, x, y, color_index FROM lisp_sprite_pixel";
-  int rc = sqlite3_prepare_v2(db, query_all.c_str(), query_all.size(), &stmt, nullptr);
-
-  if(rc != SQLITE_OK) {
-    printf("import_sprites failed %s\n", sqlite3_errmsg(db));
-    return false;
-  }
-
-  auto step_res = sqlite3_step(stmt);
-  assert(step_res != SQLITE_ERROR);
-
-  do {
-    
-    std::string psql_insert = R"(INSERT INTO lisp_sprite_pixel
-(id, sprite_id, x, y, color_index)
- VALUES
-($1, $2, $3, $4, $5))";
-
-    int id = sqlite3_column_int(stmt, 0),
-      sprite_id = sqlite3_column_int(stmt, 1),
-      x = sqlite3_column_int(stmt, 2),
-      y = sqlite3_column_int(stmt, 3),
-      color_index = sqlite3_column_int(stmt, 4);
-    
-    pqxx::params p;
-    p.append(id);
-    p.append(sprite_id);
-    p.append(x);
-    p.append(y);
-    p.append(color_index);      
-      
-    tx.exec(psql_insert, p);
-
-    step_res = sqlite3_step(stmt);
-  } while (step_res == SQLITE_ROW);
-
-  puts("sprite pixels done\n");
-
-  sqlite3_finalize(stmt);
-  return true;
-}
-
   
 bool import_lisp_sprites(pqxx::work &tx, sqlite3 *db) {
   if (! (import_palettes(tx, db))){
@@ -145,7 +98,7 @@ bool import_lisp_sprites(pqxx::work &tx, sqlite3 *db) {
   }
   
   sqlite3_stmt *stmt;
-  std::string query_all = "SELECT id, name, w, h, palette_id FROM lisp_sprite";
+  std::string query_all = "SELECT id, name, w, h, palette_id, pixels FROM lisp_sprite";
   int rc = sqlite3_prepare_v2(db, query_all.c_str(), query_all.size(), &stmt, nullptr);
 
   if(rc != SQLITE_OK) {
@@ -159,9 +112,9 @@ bool import_lisp_sprites(pqxx::work &tx, sqlite3 *db) {
   do {
     
     std::string psql_insert = R"(INSERT INTO lisp_sprite
-(id, name, w, h, palette_id)
+(id, name, w, h, palette_id, pixels)
  VALUES
-($1, $2, $3, $4, $5))";
+($1, $2, $3, $4, $5, $6))";
 
     auto name_ = sqlite3_column_text(stmt, 1);
 
@@ -170,14 +123,18 @@ bool import_lisp_sprites(pqxx::work &tx, sqlite3 *db) {
       h = sqlite3_column_int(stmt, 3),
       palette_id = sqlite3_column_int(stmt, 4);
 
-    std::string name (reinterpret_cast<const char*>(name_));
+    auto pixels_ = sqlite3_column_text(stmt, 5);
+
+    std::string name (reinterpret_cast<const char*>(name_)),
+      pixels (reinterpret_cast<const char*>(pixels_));
     
     pqxx::params p;
     p.append(id);
     p.append(name);
     p.append(w);
     p.append(h);
-    p.append(palette_id);      
+    p.append(palette_id);
+    p.append(pixels);
       
     tx.exec(psql_insert, p);
 
@@ -188,5 +145,5 @@ bool import_lisp_sprites(pqxx::work &tx, sqlite3 *db) {
 
   sqlite3_finalize(stmt);
   
-  return import_lisp_sprite_pixels(tx, db);
+  return true;
 }

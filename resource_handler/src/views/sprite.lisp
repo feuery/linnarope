@@ -64,7 +64,6 @@
 SELECT *
 FROM lisp_sprite spr 
 JOIN palette pl ON spr.palette_id = pl.id
-JOIN lisp_sprite_pixel pxl ON spr.id = pxl.sprite_id
 WHERE spr.id = $1"  id :array-hash) 'list))
 	 (colors-json (gethash "color_array" (first data)))
 	 (palette-id (gethash "palette_id" (first data)))
@@ -75,18 +74,10 @@ WHERE spr.id = $1"  id :array-hash) 'list))
 			  `((:palette-name . ,(gethash "name" r))
 			    (:palette-id . ,(gethash "id" r))))
 			(postmodern:query "SELECT ID, name FROM palette" :array-hash)))
-	 (pixels (reduce (lambda (acc row)
-			   (let ((x (gethash "x" row))
-				 (y (gethash "y" row))
-				 (color_index (gethash "color_index" row)))
-			     (unless (gethash y acc)
-			       (setf (gethash y acc) (make-hash-table :test 'equal)))
-			     (setf (gethash x (gethash y acc)) color_index)
-			     acc))
-			 data :initial-value (make-hash-table :test 'equal))))
+	 (pixels (gethash "pixels" (first data))))
     (assert palette-id)
     `((:colors . ,colors-json)
-      (:pixels . ,(json:stringify pixels))
+      (:pixels . ,pixels)
       (:palettes . ,palettes)
       (:palette-id .,palette-id)
       (:id . ,id))))

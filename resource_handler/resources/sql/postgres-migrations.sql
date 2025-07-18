@@ -88,12 +88,12 @@ CREATE TABLE IF NOT EXISTS lisp_sprite
   -- we'll see if thiqs table should be made into view that pulls the hex-color straight from the palette table
 );
 
-DROP TABLE IF EXISTS lisp_sprite_pixel;
-
 CREATE TABLE IF NOT EXISTS script
 ( ID SERIAL PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   script TEXT NOT NULL);
+
+DROP TABLE IF EXISTS lisp_sprite_pixel;
 
 ALTER TABLE MAP
 ADD COLUMN IF NOT EXISTS entry_script INT NULL DEFAULT NULL
