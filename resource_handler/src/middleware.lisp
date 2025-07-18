@@ -42,7 +42,7 @@
 	  (alexandria:hash-table-alist
 	   tabs)))
 
-(defun @html (current-tab-url next)
+(defun @html (next current-tab-url)
   "Expects next to return '((:a . alist) (:of . data)) that populates {{mustache-placeholders}} in /resources/html. :component is a key that specifies which template is chosen to be set up inside root.html"
   (let* ((component-data (funcall next))
 	 (component (alist-get component-data :component))
