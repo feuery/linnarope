@@ -6,10 +6,10 @@ TEST_HEADERS := $(wildcard test/headers/*.h)
 
 CFLAGS=-Wall -Werror -Wno-deprecated-declarations -std=c++20 -g -O0 -c -Iheaders -I/usr/local/include $$(pkg-config --cflags libpqxx)
 
-LDFLAGS=$$(pkg-config --libs sqlite3) $$(pkg-config --libs libpqxx) $$(pkg-config libpq --libs)
+LDFLAGS=$$(pkg-config --libs sqlite3) $$(pkg-config --libs libpqxx) $$(pkg-config libpq --libs) -L/usr/lib/
 
 TEST_CFLAGS=$(CFLAGS) $$(pkg-config catch2 --cflags) -I./test/headers
-TEST_LDFLAGS=$$(pkg-config catch2 --libs) -lCatch2Main $(LDFLAGS)
+TEST_LDFLAGS=$$(pkg-config catch2-with-main --libs) $(LDFLAGS)
 
 
 # DEPENDENCIES := libpqxx sqlite3  

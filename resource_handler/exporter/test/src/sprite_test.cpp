@@ -27,7 +27,7 @@ std::string get_file_contents(const char *filename) {
 
 
 void setup_test_db(pqxx::work &tx) {
-  tx.exec(get_file_contents("../resources/sql/postgres-migrations.sql")).no_rows();
+  tx.exec(get_file_contents("./resource_handler/resources/sql/postgres-migrations.sql")).no_rows();
 }
 
 void setup_sprites (pqxx::work& tx) {
@@ -139,8 +139,8 @@ TEST_CASE("test exporting and de-exporting sprites") {
     REQUIRE(c == 1); 		// should've found a single row
 
 
-    // TODO what if we pull the export back without emptying psql?
-    // TODO what if wwe re-export it with the same name? Will the data stay intact?
+    // TODO: what if we pull the export back without emptying psql?
+    // TODO: what if wwe re-export it with the same name? Will the data stay intact?
   }
   
 }

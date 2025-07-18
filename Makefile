@@ -5,10 +5,10 @@ TEST_OBJS = $(patsubst engine/test/src/%.cpp,%.o,$(wildcard engine/test/src/*.cp
 TEST_HEADERS := $(wildcard engine/test/headers/*.h)
 CFLAGS=-Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/headers -I/usr/local/include $$(pkg-config --cflags SDL2_image) $$(ecl-config --cflags) $$(pkg-config nlohmann_json --cflags) $$(pkg-config --cflags SDL2_ttf)
 
-LDFLAGS=$$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs SDL2_ttf)
+LDFLAGS=$$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs SDL2_ttf) -L/usr/lib/
 
 TEST_CFLAGS=$(CFLAGS) $$(pkg-config catch2 --cflags)
-TEST_LDFLAGS=$$(pkg-config catch2 --libs) -lCatch2Main $(LDFLAGS)
+TEST_LDFLAGS=$$(pkg-config catch2-with-main --libs) $(LDFLAGS)
 
 finropedemo : $(OBJECTS) exporter
 	clang++ $(OBJECTS) -o finropedemo $(LDFLAGS)
@@ -20,16 +20,18 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 # $< contains the matched file
 
 # builds the test binary 
-tests: $(TEST_OBJS) $(OBJECTS)
+tests: $(TEST_OBJS) $(OBJECTS) exporter-tests
 	clang++ $(TEST_LDFLAGS) $(TEST_OBJS) $(filter-out main.o, $(OBJECTS)) -o finropedemotests
 
 # runs tests
 .PHONY: test
 test: tests
-	./finropedemotests
+	./finropedemotests && ./resource_handler/exporter/exporter_test
 
+.PHONY: test-junit-gha
 test-junit-gha: tests
-	./finropedemotests --reporter JUnit::out=result-junit.xml
+	./finropedemotests --reporter JUnit::out=engine-result-junit.xml
+	./resource_handler/exporter/exporter_test --reporter JUnit::out=exporter-result-junit.xml
 
 $(TEST_OBJS): %.o: engine/test/src/%.cpp $(TEST_HEADERS)
 	clang++ $< $(TEST_CFLAGS)
@@ -48,6 +50,10 @@ clean:
 .PHONY: exporter
 exporter:
 	$(MAKE) -C ./resource_handler/exporter
+
+.PHONY: exporter-tests
+exporter-tests:
+	$(MAKE) -C ./resource_handler/exporter tests
 
 ## runs resource manager
 .PHONY: resource-manager
