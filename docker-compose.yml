@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:latest
     ports:
-      - 127.0.0.1:5432:5432
+      - 5432:5432
     environment:
       POSTGRES_USER: linnarope
       POSTGRES_PASSWORD: linnarope
@@ -10,3 +10,8 @@ services:
       POSTGRES_INITDB_ARGS: '--locale en_US.UTF-8'
     volumes:
       - ./psql-setup:/docker-entrypoint-initdb.d
+    networks:
+      - stupid_gha_network
+      
+networks:
+  stupid_gha_network:

@@ -26,4 +26,4 @@ public: virtual void do_it (std::string &psql_connstring, std::string sqlite_pat
   (std::string("postgresql://") + __user + ":" + __password + "@localhost:5432/" + __db)
 
 #define test_connection_string() \
-  (std::string("postgresql://") + __user + ":" + __password + "@localhost:5432/" + __db_test)
+  (std::string("postgresql://") + __user + ":" + __password + "@db:5432/" + __db_test)

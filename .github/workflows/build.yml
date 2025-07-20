@@ -12,26 +12,34 @@ jobs:
   linux-build:
 
     runs-on: ubuntu-latest
-    container: archlinux:base-devel
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install dependencies
-      run: make deps 
-    - name: Make the regular binary 
-      run: make
 
-    - name: Start the resource-handler postgres
+    - name: Start the db
+      uses: hoverkraft-tech/compose-action@v2.0.1
+      with:
+        compose-file: "./docker-compose.yml"
+
+    - name: DEBUG
       run: |
-        cd resource_handler
-        docker-compose up -d
-      
-    - name: Tests
-      run: make test-junit-gha
+        docker network ls
+        
+    - name: Setup and run tests
+      uses: addnab/docker-run-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        image: archlinux:base-devel 
+        options: -v ${{ github.workspace }}:/workspace -v ${{ github.workspace }}/config:/etc/murja  --network linnarope_stupid_gha_network
+        run: |
+          cd /workspace
+          make deps
+          make test-junit-gha -j20
 
     - name: debug
       if: success() || failure()
-      run: ls -la .
+      run: find . -name '*result-junit.xml'
       
     - name: Publish Test Report
       uses: mikepenz/action-junit-report@v5
@@ -39,19 +47,19 @@ jobs:
       with:
         report_paths: './*-result-junit.xml'
       
-    - name: Release regular binary 
-      uses: actions/upload-artifact@v4
-      with:
-        name: Mac release 
-        path: ./finropedemo
-        if-no-files-found: error 
-        retention-days: 1 
-        overwrite: true
-    - name: Release binary with tests 
-      uses: actions/upload-artifact@v4
-      with:
-        name: Mac test release 
-        path: ./finropedemotests
-        if-no-files-found: error 
-        retention-days: 1 
-        overwrite: true
+    # - name: Release regular binary 
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: Mac release 
+    #     path: ./finropedemo
+    #     if-no-files-found: error 
+    #     retention-days: 1 
+    #     overwrite: true
+    # - name: Release binary with tests 
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: Mac test release 
+    #     path: ./finropedemotests
+    #     if-no-files-found: error 
+    #     retention-days: 1 
+    #     overwrite: true

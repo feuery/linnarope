@@ -8,8 +8,8 @@ CFLAGS=-Wall -Werror -Wno-deprecated-declarations -std=c++20 -g -O0 -c -Iheaders
 
 LDFLAGS=$$(pkg-config --libs sqlite3) $$(pkg-config --libs libpqxx) $$(pkg-config libpq --libs) -L/usr/lib/
 
-TEST_CFLAGS=$(CFLAGS) $$(pkg-config catch2 --cflags) -I./test/headers
-TEST_LDFLAGS=$$(pkg-config catch2-with-main --libs) $(LDFLAGS)
+TEST_CFLAGS=$(CFLAGS) $$(pkg-config gtest_main --cflags) -I./test/headers
+TEST_LDFLAGS=$$(pkg-config gtest_main --libs) $(LDFLAGS)
 
 
 # DEPENDENCIES := libpqxx sqlite3  
@@ -38,4 +38,4 @@ test: tests
 	./exporter_test
 
 test-junit-gha: tests
-	./exporter_test --reporter JUnit::out=result-junit.xml
+	./exporter_test --gtest_output=xml:test-result.xml
