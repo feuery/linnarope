@@ -77,8 +77,6 @@ TEST(exporting_and_importing_sprites, all) {
       puts("Removed sqlite");
     }	
   });
-
-  ASSERT_EQ(1, 0);
   
   
   printf("Using test postgres in %s\n", psql_connstring.c_str());

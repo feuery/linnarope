@@ -1,11 +1,11 @@
-#include <catch2/catch_test_macros.hpp>
+#include <gtest/gtest.h>
 
-TEST_CASE("Ilpo testaa") {
-  REQUIRE(23 == 23);
-  REQUIRE(1 == 1);
+TEST(ilpo_testaa, all) {
+  ASSERT_EQ(23, 23);
+  ASSERT_EQ(1, 1);
 }
 
-TEST_CASE("Ilpo testaa lisää ") {
-  REQUIRE(1 == 1);
-  REQUIRE(23 == 23);
+TEST(ilpo_testaa_lisää, all) {
+  ASSERT_EQ(1, 1);
+  ASSERT_EQ(23, 23);
 }

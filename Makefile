@@ -8,7 +8,7 @@ CFLAGS=-Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/head
 LDFLAGS=$$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs SDL2_ttf) -L/usr/lib/
 
 TEST_CFLAGS=$(CFLAGS) $$(pkg-config gtest_main --cflags)
-TEST_LDFLAGS=$$(pkg-config gtest_main --libs) $(LDFLAGS)
+TEST_LDFLAGS=$(LDFLAGS) -lSDL2_ttf $$(pkg-config gtest_main --libs) -lgtest #gtest_main does something really stupid that requires to repeat some of these...
 
 finropedemo : $(OBJECTS) exporter
 	clang++ $(OBJECTS) -o finropedemo $(LDFLAGS)
@@ -21,7 +21,9 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 
 # builds the test binary 
 tests: $(TEST_OBJS) $(OBJECTS) exporter-tests
-	echo 'disable engine tests for a while' # clang++ $(TEST_LDFLAGS) $(TEST_OBJS) $(filter-out main.o, $(OBJECTS)) -o finropedemotests
+	echo "Mitä ihmettä pkg-config gtest_main --libs tulostaa?"
+	pkg-config gtest_main --libs
+	clang++ $(TEST_LDFLAGS) $(TEST_OBJS) $(filter-out main.o, $(OBJECTS)) -o finropedemotests
 
 # runs tests
 .PHONY: test
@@ -33,8 +35,7 @@ test-junit-gha: tests
 	./resource_handler/exporter/exporter_test --gtest_output=xml:exporter-result-junit.xml
 
 $(TEST_OBJS): %.o: engine/test/src/%.cpp $(TEST_HEADERS)
-	echo 'Disable engine tests for a while'
-	# clang++ $< $(TEST_CFLAGS)
+	clang++ $< $(TEST_CFLAGS)
 
 # install dependencies
 .PHONY: deps
@@ -43,7 +44,8 @@ deps:
 
 .PHONY: clean
 clean:
-	rm $(OBJECTS) finropedemo
+	rm $(OBJECTS) $(TEST_OBJS) finropedemo
+	$(MAKE) -C ./resource_handler/exporter clean
 
 # resource manager specific tasks
 
