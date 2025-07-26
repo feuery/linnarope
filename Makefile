@@ -1,14 +1,9 @@
 OBJECTS = $(patsubst engine/src/%.cpp,%.o,$(wildcard engine/src/*.cpp))
 HEADERS := $(wildcard engine/headers/*.h)
 
-TEST_OBJS = $(patsubst engine/test/src/%.cpp,%.o,$(wildcard engine/test/src/*.cpp))
-TEST_HEADERS := $(wildcard engine/test/headers/*.h)
 CFLAGS=-Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/headers -I/usr/local/include $$(pkg-config --cflags SDL2_image) $$(ecl-config --cflags) $$(pkg-config nlohmann_json --cflags) $$(pkg-config --cflags SDL2_ttf)
 
 LDFLAGS=$$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs SDL2_ttf) -L/usr/lib/
-
-TEST_CFLAGS=$(CFLAGS) $$(pkg-config gtest_main --cflags)
-TEST_LDFLAGS=$(LDFLAGS) -lSDL2_ttf $$(pkg-config gtest_main --libs) -lgtest #gtest_main does something really stupid that requires to repeat some of these...
 
 finropedemo : $(OBJECTS) exporter
 	clang++ $(OBJECTS) -o finropedemo $(LDFLAGS)
@@ -19,23 +14,15 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 
 # $< contains the matched file
 
-# builds the test binary 
-tests: $(TEST_OBJS) $(OBJECTS) exporter-tests
-	echo "Mitä ihmettä pkg-config gtest_main --libs tulostaa?"
-	pkg-config gtest_main --libs
-	clang++ $(TEST_LDFLAGS) $(TEST_OBJS) $(filter-out main.o, $(OBJECTS)) -o finropedemotests
-
 # runs tests
 .PHONY: test
-test: tests
-	./finropedemotests && ./resource_handler/exporter/exporter_test
+test: finropedemo
+	./finropedemo --run-tests && ./resource_handler/exporter/exporter -test
 
-.PHONY: test-junit-gha
-test-junit-gha: tests
-	./resource_handler/exporter/exporter_test --gtest_output=xml:exporter-result-junit.xml
+# .PHONY: test-junit-gha
+# test-junit-gha: test
+# 	./resource_handler/exporter/exporter_test --gtest_output=xml:exporter-result-junit.xml
 
-$(TEST_OBJS): %.o: engine/test/src/%.cpp $(TEST_HEADERS)
-	clang++ $< $(TEST_CFLAGS)
 
 # install dependencies
 .PHONY: deps
@@ -44,7 +31,7 @@ deps:
 
 .PHONY: clean
 clean:
-	rm $(OBJECTS) $(TEST_OBJS) finropedemo
+	rm $(OBJECTS) finropedemo
 	$(MAKE) -C ./resource_handler/exporter clean
 
 # resource manager specific tasks
@@ -53,9 +40,9 @@ clean:
 exporter:
 	$(MAKE) -C ./resource_handler/exporter
 
-.PHONY: exporter-tests
-exporter-tests:
-	$(MAKE) -C ./resource_handler/exporter tests
+.PHONY: exporter-test
+exporter-test: exporter
+	./resource_handler/exporter/exporter -test
 
 ## runs resource manager
 .PHONY: resource-manager

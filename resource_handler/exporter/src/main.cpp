@@ -1,18 +1,33 @@
 #include <stdio.h>
 #include <string>
+#include <vector>
 #include <app.h>
+
+std::vector<std::string> transform_argv(int argc, char **argv) {
+  std::vector<std::string> acc;
+  for(int i=0; i < argc; i++) {
+    acc.push_back(std::string(argv[i]));
+  }
+
+  return acc;
+}
 
 int main(int argc, char **argv) {
 
   App *app;
 
-  std::string connString = connection_string(),
-    dst_sqlite_path = "";
+  std::string dst_sqlite_path = "";
+  auto args = transform_argv(argc, argv);
   
   switch(argc) {
   case 2:
-    dst_sqlite_path = argv[1];
-    app = new Exporter;
+    if(args.at(1) != "-test") {
+      dst_sqlite_path = argv[1];
+      app = new Exporter;
+    }
+    else {
+      app = new AutoTests;
+    }
     break;
   case 3:
     dst_sqlite_path = argv[2];
@@ -23,7 +38,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  app->do_it(connString, dst_sqlite_path);
+  app->do_it(dst_sqlite_path);
 
   delete app;
   return 0;

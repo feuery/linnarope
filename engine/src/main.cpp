@@ -24,6 +24,7 @@ App* getApp (int argc, char **argv) {
     {"game", required_argument, nullptr, 'g'},
     {"export-script-to", required_argument, nullptr, 'e'},
     {"import-scripts-from", required_argument, nullptr, 'i'},
+    {"run-tests", optional_argument, nullptr, 't'},
     { nullptr, 0, nullptr, 0}};
 
   std::string map = "",
@@ -32,6 +33,8 @@ App* getApp (int argc, char **argv) {
     game = "",
     export_dst_dir = "",
     import_src_dir = "";
+
+  bool runTests = false;
 
   App *app = nullptr;
   
@@ -61,10 +64,17 @@ App* getApp (int argc, char **argv) {
       printf("Importing scripts from %s\n", optarg);
       import_src_dir = std::string(optarg);
       break;
+    case 't':
+      runTests = true;
+      break;
+      
     }
   }
 
-  if (game != "" && export_dst_dir == "" && import_src_dir != "") {
+  if (runTests) {
+    app = new AutoTests;
+  }
+  else if (game != "" && export_dst_dir == "" && import_src_dir != "") {
     app = new ScriptImport(game, import_src_dir);
   }
   else if (game != "" && export_dst_dir != "" && import_src_dir == "") {
@@ -88,7 +98,6 @@ App* getApp (int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
-  puts("Väärä main");
   App* app = getApp(argc, argv);
   app->do_it();
   freeApp(app);

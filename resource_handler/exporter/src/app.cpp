@@ -127,7 +127,9 @@ void delete_preexisting_sqlite(std::string& sqlite_path ) {
   remove(sqlite_path.c_str());
 }
 
-void Exporter::do_it(std::string &psql_connstring, std::string dst_sqlite_path) {
+void Exporter::do_it(std::string dst_sqlite_path) {
+
+  std::string psql_connstring = this->postgres_connstring();
 
   delete_preexisting_sqlite(dst_sqlite_path);
   
@@ -154,7 +156,8 @@ void Exporter::do_it(std::string &psql_connstring, std::string dst_sqlite_path) 
 App::~App() { }
 
 
-void Importer::do_it(std::string &psql_connstring, std::string sqlite_path) {
+void Importer::do_it(std::string sqlite_path) {
+  std::string psql_connstring = this->postgres_connstring();
   printf("Importing sqlite %s into psql %s\n", sqlite_path.c_str(), psql_connstring.c_str());
 
   sqlite3 *db;
@@ -172,4 +175,11 @@ void Importer::do_it(std::string &psql_connstring, std::string sqlite_path) {
   else w.abort();
 
   sqlite3_close(db);
+}
+
+
+App::App(): isTest(false) { }
+
+std::string App::postgres_connstring() {
+  return isTest? connection_string: test_connection_string;
 }

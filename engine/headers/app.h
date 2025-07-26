@@ -2,6 +2,7 @@
 
 #include <string>
 #include <SDL.h>
+#include <test.h>
 
 class App {
 public:
@@ -59,4 +60,13 @@ public:
 
   ScriptImport(std::string project_path, std::string src_dir);
   void do_it() override;
+};
+
+class AutoTests: public App {
+private:
+  std::vector<Test> get_tests();
+  
+public:
+  virtual void do_it () override;
+  void RunAndReportTests();
 };
