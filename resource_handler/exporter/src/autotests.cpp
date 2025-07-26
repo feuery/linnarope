@@ -14,7 +14,7 @@ std::vector<Test> AutoTests::get_tests() {
   std::string psql_connstring = postgres_connstring();
   std::string test_sqlite_url = "./test.export";
 
-  acc.push_back(Test([=](){
+  acc.push_back(Test([=](std::vector<Result>& results){
     printf("Using test postgres in %s\n", psql_connstring.c_str());
     pqxx::connection c(psql_connstring);
     pqxx::work tx {c};
@@ -111,8 +111,10 @@ void AutoTests::RunAndReportTests() {
   for(auto &test: get_tests()) {
     test.setup();
 
-    auto result = test.run_test();
-    printf("%s => %s\n", test.name().c_str(), result.result? "SUCCESS":"FAILURE");
+    test.run_test();
+    test.report();
+    // auto result = test.run_test();
+    // printf("%s => %s\n", test.name().c_str(), result.result? "SUCCESS":"FAILURE");
 
     test.teardown();
   }

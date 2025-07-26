@@ -8,25 +8,31 @@
  * was a disaster in the summer of 2025.
  */
 
-#include "result.h"
+#include <result.h>
 #include <functional>
 
 class Test {
 private:
-  std::function<bool()> test_fn, _setup, _teardown;
-
+  Reporter reporter;
+  
+  std::function<bool(std::vector<Result>&)> test_fn;
+  std::function<bool()> _setup, _teardown;
   std::string nme;
+
+  std::vector<Result> results;
   
 public:
 
-  Test(std::function<bool()> test_fn,
+  Test(std::function<bool(std::vector<Result>&)> test_fn,
        std::function<bool()> setup_fn,
        std::function<bool()> teardown_fn,
        std::string name);
+
+  void report();
   
   bool setup();
   bool teardown();
-  Result run_test();
+  void run_test();
   std::string& name();
 };
 

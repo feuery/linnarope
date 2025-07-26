@@ -8,7 +8,7 @@
 #include <tmx_json.h>
 
 
-Test tmx_test = Test([](){
+Test tmx_test = Test([](std::vector<Result>& results){
   Project *proj = nullptr;
   proj = read_project("./test-resources/linnarope-export.game");
   // Project is loaded correctly with enough maps 
@@ -95,8 +95,10 @@ void AutoTests::RunAndReportTests() {
   for(auto &test: get_tests()) {
     test.setup();
 
-    auto result = test.run_test();
-    printf("%s => %s\n", test.name().c_str(), result.result? "SUCCESS":"FAILURE");
+    test.run_test();
+    test.report();
+    // auto result = test.run_test();
+    // printf("%s => %s\n", test.name().c_str(), result.result? "SUCCESS":"FAILURE");
 
     test.teardown();
   }
