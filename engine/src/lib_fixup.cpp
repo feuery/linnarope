@@ -24,6 +24,7 @@ void spit(const char *filename, std::string &contents) {
 
   assert(f);
 
+  // printf("Writing %s to %s\n", contents.c_str(), filename);
   fwrite(contents.c_str(), sizeof(char), contents.size(), f);
   fclose(f);
 }

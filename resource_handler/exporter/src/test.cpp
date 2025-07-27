@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <test.h>
 #include <test_json.h>
+#include <lib_fixup.h>
 
 using json=nlohmann::json;
 
@@ -32,8 +33,14 @@ void Test::report(Reporter reporter) {
     break;
   case JSON:
     json j = this;
-    printf("%s\n", j.dump().c_str());
+
+    std::string dump = j.dump();
+
+    spit(json_output_file().c_str(), dump);
     break;
   }
 }
-  
+
+std::string json_output_file() {
+  return appname + "-test-output.json";
+}

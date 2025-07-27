@@ -10,6 +10,10 @@
 #include <string>
 #include <project.h>
 #include <app.h>
+#include <result.h>
+
+// to make tests output results into a sensibly-named file
+const std::string appname = "engine";
 
 void freeApp(App *app) { delete app; }
 

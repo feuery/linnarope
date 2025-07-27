@@ -2,6 +2,10 @@
 #include <string>
 #include <vector>
 #include <app.h>
+#include <result.h>
+
+// to make tests output results into a sensibly-named file
+const std::string appname = "exporter";
 
 std::vector<std::string> transform_argv(int argc, char **argv) {
   std::vector<std::string> acc;

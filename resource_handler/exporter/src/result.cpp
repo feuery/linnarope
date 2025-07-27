@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <result.h>
 #include <test_json.h>
+#include <lib_fixup.h>
 
 using json=nlohmann::json;
 
@@ -21,8 +22,10 @@ void Result::report(Reporter r) {
     printf("%s(%s) => %s\n", tostring(macro).c_str() , code.c_str(), result? "SUCCESS": "FAILURE");
     break;
   default:
+    // wonder if anyone will ever call this path :D
     json j = this;
-    printf("%s\n", j.dump().c_str());
+    auto dump = j.dump();
+    spit(json_output_file().c_str(), dump);
     break;
   }
 }

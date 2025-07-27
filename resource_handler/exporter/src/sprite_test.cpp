@@ -4,28 +4,9 @@
 #include <string>
 #include <sqlite3.h>
 #include <app.h>
+#include <lib_fixup.h>
 
 #include <sprite_test.h>
-
-
-std::string get_file_contents(const char *filename) {
-
-  FILE *fp = fopen(filename, "rb");
-  if (fp)
-    {
-      std::string contents;
-      fseek(fp, 0, SEEK_END);
-      contents.resize(ftell(fp));
-      rewind(fp);
-      fread(&contents[0], 1, contents.size(), fp);
-      fclose(fp);
-      return(contents);
-    }
-
-  printf("get_file_contents('%s'); failed\n", filename);
-  throw(errno);
-}
-
 
 void setup_test_db(pqxx::work &tx) {
   tx.exec(get_file_contents("./resource_handler/resources/sql/postgres-migrations.sql")).no_rows();

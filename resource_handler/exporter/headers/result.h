@@ -1,6 +1,12 @@
 #pragma once
 
+#include <string>
+
 enum TestResult: bool { SUCCESS = true, FAILURE = false};
+
+extern const std::string appname; // main.o is supposed to populate this...
+std::string json_output_file();
+
 enum Reporter { HUMAN, JSON /*json could be transformed into junit xml with a compiler that's yet to be written */ };
 enum AssertionMacro { ensure, ensure_throws, ensure_nothrow};
 
