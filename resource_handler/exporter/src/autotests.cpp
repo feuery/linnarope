@@ -101,7 +101,7 @@ std::vector<Test> AutoTests::get_tests() {
   return acc;
 }
 
-AutoTests::AutoTests() {
+AutoTests::AutoTests(Reporter rep): reporter(rep) {
   isTest = true;
 }
 
@@ -112,7 +112,7 @@ void AutoTests::RunAndReportTests() {
     test.setup();
 
     test.run_test();
-    test.report();
+    test.report(reporter);
     // auto result = test.run_test();
     // printf("%s => %s\n", test.name().c_str(), result.result? "SUCCESS":"FAILURE");
 

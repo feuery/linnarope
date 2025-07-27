@@ -65,8 +65,11 @@ public:
 class AutoTests: public App {
 private:
   std::vector<Test> get_tests();
+  Reporter reporter;
   
 public:
+  AutoTests(Reporter reporter);
+  
   virtual void do_it () override;
   void RunAndReportTests();
 };

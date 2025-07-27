@@ -26,10 +26,12 @@ public: virtual void do_it (std::string sqlite_path) override;
 class AutoTests: public App {
 private:
   std::vector<Test> get_tests();
+
+  Reporter reporter;
   
 public:
   virtual void do_it (std::string sqlite_path) override;
-  AutoTests();
+  AutoTests(Reporter rep);
   void RunAndReportTests();
 };
 

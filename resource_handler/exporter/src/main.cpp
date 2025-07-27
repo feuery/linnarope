@@ -26,12 +26,19 @@ int main(int argc, char **argv) {
       app = new Exporter;
     }
     else {
-      app = new AutoTests;
+      app = new AutoTests(HUMAN);
     }
     break;
   case 3:
-    dst_sqlite_path = argv[2];
-    app = new Importer;
+    if(args.at(1) != "-test") {
+      dst_sqlite_path = argv[2];
+      app = new Importer;
+    }
+    else {
+      puts("Running tests with json reporter");
+      app = new AutoTests(JSON);
+    }
+
     break;
   default:
     printf("Usage: exporter projectfilename\nOr: exporter import projectfilename");

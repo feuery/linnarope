@@ -25,6 +25,7 @@ App* getApp (int argc, char **argv) {
     {"export-script-to", required_argument, nullptr, 'e'},
     {"import-scripts-from", required_argument, nullptr, 'i'},
     {"run-tests", optional_argument, nullptr, 't'},
+    {"json-reporter", optional_argument, nullptr, 'j'},
     { nullptr, 0, nullptr, 0}};
 
   std::string map = "",
@@ -34,12 +35,15 @@ App* getApp (int argc, char **argv) {
     export_dst_dir = "",
     import_src_dir = "";
 
-  bool runTests = false;
+  bool runTests = false, reportJson = false;
 
   App *app = nullptr;
   
   while ((c = getopt_long(argc, argv, "m:p:w:g:e:", opts, nullptr)) != -1) {
     switch(c) {
+    case 'j':
+      reportJson = true;
+      break;
     case 'm':
       printf("map-file found %s\n", optarg);
       map = std::string(optarg);
@@ -71,8 +75,13 @@ App* getApp (int argc, char **argv) {
     }
   }
 
+  if (reportJson && !runTests) {
+    puts("--json-reporter implies --run-tests. Running tests now.");
+    runTests = reportJson;
+  }    
+
   if (runTests) {
-    app = new AutoTests;
+    app = new AutoTests(reportJson? JSON: HUMAN);
   }
   else if (game != "" && export_dst_dir == "" && import_src_dir != "") {
     app = new ScriptImport(game, import_src_dir);

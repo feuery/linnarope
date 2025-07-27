@@ -1,7 +1,7 @@
 #pragma once
 
 enum TestResult: bool { SUCCESS = true, FAILURE = false};
-enum Reporter { HUMAN, JUNIT };
+enum Reporter { HUMAN, JSON /*json could be transformed into junit xml with a compiler that's yet to be written */ };
 enum AssertionMacro { ensure, ensure_throws, ensure_nothrow};
 
 #include <string>

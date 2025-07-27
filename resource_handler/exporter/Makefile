@@ -4,7 +4,7 @@ HEADERS := $(wildcard headers/*.h)
 TEST_OBJS = $(patsubst test/src/%.cpp,%.o,$(wildcard test/src/*.cpp))
 TEST_HEADERS := $(wildcard test/headers/*.h)
 
-CFLAGS=-Wall -Werror -Wno-deprecated-declarations -std=c++20 -g -O0 -c -Iheaders -I/usr/local/include $$(pkg-config --cflags libpqxx)
+CFLAGS=-Wall -Werror -Wno-deprecated-declarations -std=c++20 -g -O0 -c -Iheaders -I/usr/local/include $$(pkg-config --cflags libpqxx) $$(pkg-config nlohmann_json --cflags)
 
 LDFLAGS=$$(pkg-config --libs sqlite3) $$(pkg-config --libs libpqxx) $$(pkg-config libpq --libs) -L/usr/lib/
 

@@ -5,6 +5,9 @@ CFLAGS=-Wall -Werror -std=c++20 -g -O0 -c $$(sdl2-config --cflags) -Iengine/head
 
 LDFLAGS=$$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg-config --libs sqlite3) $$(ecl-config --libs) $$(pkg-config --libs SDL2_ttf) -L/usr/lib/
 
+# TEST_FLAGS=-j
+TEST_FLAGS=
+
 finropedemo : $(OBJECTS) exporter
 	clang++ $(OBJECTS) -o finropedemo $(LDFLAGS)
 
@@ -17,7 +20,7 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 # runs tests
 .PHONY: test
 test: finropedemo
-	./finropedemo --run-tests && ./resource_handler/exporter/exporter -test
+	./finropedemo --run-tests $(TEST_FLAGS) && ./resource_handler/exporter/exporter -test $(TEST_FLAGS)
 
 # .PHONY: test-junit-gha
 # test-junit-gha: test

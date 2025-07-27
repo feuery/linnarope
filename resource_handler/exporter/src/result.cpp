@@ -1,5 +1,8 @@
 #include <cstdio>
 #include <result.h>
+#include <test_json.h>
+
+using json=nlohmann::json;
 
 std::string tostring(AssertionMacro m) {
   switch(m) {
@@ -18,7 +21,8 @@ void Result::report(Reporter r) {
     printf("%s(%s) => %s\n", tostring(macro).c_str() , code.c_str(), result? "SUCCESS": "FAILURE");
     break;
   default:
-    puts("Not implemented");
+    json j = this;
+    printf("%s\n", j.dump().c_str());
     break;
   }
 }

@@ -12,23 +12,23 @@
 #include <functional>
 
 class Test {
-private:
-  Reporter reporter;
-  
+private:  
   std::function<bool(std::vector<Result>&)> test_fn;
   std::function<bool()> _setup, _teardown;
   std::string nme;
-
-  std::vector<Result> results;
   
 public:
+  // don't touch unless you're test_json.h's to_json()
+  std::vector<Result> results;
+
+  
 
   Test(std::function<bool(std::vector<Result>&)> test_fn,
        std::function<bool()> setup_fn,
        std::function<bool()> teardown_fn,
        std::string name);
 
-  void report();
+  void report(Reporter reporter);
   
   bool setup();
   bool teardown();
