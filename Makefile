@@ -7,6 +7,8 @@ LDFLAGS=$$(sdl2-config --libs) -lpugixml $$(pkg-config --libs SDL2_image) $$(pkg
 
 # TEST_FLAGS=-j
 TEST_FLAGS=
+TEST_COMPILER_DEPS=$(wildcard test-compiler/*.fs) test-compiler/test-compiler.fsproj
+TEST_COMPILER_PATH=test-compiler/test-compiler/test-compiler
 
 finropedemo : $(OBJECTS) exporter
 	clang++ $(OBJECTS) -o finropedemo $(LDFLAGS)
@@ -19,13 +21,20 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 
 # runs tests
 .PHONY: test
-test: finropedemo
+test: finropedemo test-compiler
 	./finropedemo --run-tests $(TEST_FLAGS) && ./resource_handler/exporter/exporter -test $(TEST_FLAGS)
+	find . -name '*test-output.json' -exec $(TEST_COMPILER_PATH) --input {} --output {}.xml \;
 
 # .PHONY: test-junit-gha
 # test-junit-gha: test
 # 	./resource_handler/exporter/exporter_test --gtest_output=xml:exporter-result-junit.xml
 
+
+$(TEST_COMPILER_PATH): $(TEST_COMPILER_DEPS)
+	$(MAKE) -C test-compiler
+
+.PHONY: test-compiler
+test-compiler: $(TEST_COMPILER_PATH)
 
 # install dependencies
 .PHONY: deps

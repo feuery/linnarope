@@ -5,10 +5,6 @@ open Testsuite
 open Thoth.Json.Net
 open System.Xml.Serialization
 
-let json = File.ReadAllText("../engine-test-output.json")
-
-let result = json |> Decode.Auto.fromString<TestSuite>
-
 let array_to_map (arr: array<String>): Option<Map<String, String>> =
     match arr.Length with 
     | _ when arr.Length <> 0 && arr.Length % 2 = 0  -> let count_of_params = arr.Length / 2 in
@@ -25,15 +21,13 @@ let compile_backend testsuite output_filename =
 
     let serializer = XmlSerializer(typeof<TestSuites>)
     serializer.Serialize(writer, testsuites, serializerNamespaces)
-
-    // printf $"{writer.ToString()}\n"
-
     File.WriteAllLines(output_filename, [| writer.ToString() |])
     
 
       
     
 let compile input_f output_f =
+    printfn "Compiling test file %s to %s" input_f output_f
     let input_json = File.ReadAllText(input_f) in
     let testdata_result = Decode.Auto.fromString<TestSuite> input_json in
     match testdata_result with
