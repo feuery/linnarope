@@ -1,11 +1,21 @@
 module Testsuite
 
 open Thoth.Json.Net
+open System.Xml.Serialization
 
+[<CLIMutable>]
+[<XmlRoot("testcase")>] 
 type TestResult =
-    { classname : string 
-      element : string 
-      name : string 
+    { [<XmlAttribute("classname")>]
+      classname : string
+
+      [<XmlIgnore()>]
+      element : string
+      
+      [<XmlAttribute("name")>]
+      name : string
+      
+      [<XmlAttribute("time")>]
       time : double }
 
 let test_result_json = "{
@@ -32,9 +42,19 @@ let test_result_json = "{
 //     (Decode.field "data" User.decoder)
 //     json
 
-      
 
+[<CLIMutable>]
+[<XmlRoot("testsuite")>] 
 type TestSuite =
-    { element : string 
+    { [<XmlIgnore()>]
+      element : string
+      [<XmlAttribute("name")>]
       name : string
-      results : List<TestResult>}
+      [<XmlElement("testcase")>]
+      results : TestResult[]}
+
+[<CLIMutable>]
+[<XmlRoot("testsuites")>] 
+type TestSuites =
+    { [<XmlElement("testsuite")>]
+      suites : TestSuite[] }
