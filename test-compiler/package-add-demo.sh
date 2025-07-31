@@ -1,2 +1,3 @@
 dotnet package add Thoth.json.net --project ./test-compiler.fsproj
-Tool 'fsautocomplete' is already installed.
+# used for lsp 
+dotnet tool install --global fsautocomplete
