@@ -111,6 +111,7 @@ App* getApp (int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
+  puts("Running engine...");
   App* app = getApp(argc, argv);
   app->do_it();
   freeApp(app);

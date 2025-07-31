@@ -20,15 +20,16 @@ $(OBJECTS): %.o: engine/src/%.cpp $(HEADERS)
 # $< contains the matched file
 
 # runs tests
+
+.PHONY: clean-test-files
+clean-test-files:
+	rm -f *-test-output.json *-test-output.json.xml  # Without -f this would fail and stop running the makefile in a clean repo 
+
 .PHONY: test
-test: finropedemo test-compiler
-	./finropedemo --run-tests $(TEST_FLAGS) && ./resource_handler/exporter/exporter -test $(TEST_FLAGS)
+test: finropedemo test-compiler clean-test-files
+	./finropedemo --run-tests $(TEST_FLAGS)
+	./resource_handler/exporter/exporter -test $(TEST_FLAGS) 
 	find . -name '*test-output.json' -exec $(TEST_COMPILER_PATH) --input {} --output {}.xml \;
-
-# .PHONY: test-junit-gha
-# test-junit-gha: test
-# 	./resource_handler/exporter/exporter_test --gtest_output=xml:exporter-result-junit.xml
-
 
 $(TEST_COMPILER_PATH): $(TEST_COMPILER_DEPS)
 	$(MAKE) -C test-compiler

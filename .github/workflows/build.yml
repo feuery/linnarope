@@ -6,7 +6,7 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "test-compiler-fsharp" ]
 
 jobs:
   linux-build:
@@ -31,15 +31,22 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         image: archlinux:base-devel 
-        options: -v ${{ github.workspace }}:/workspace -v ${{ github.workspace }}/config:/etc/murja  --network linnarope_stupid_gha_network
+        options: -v ${{ github.workspace }}:/workspace -v ${{ github.workspace }}/config:/etc/murja --network linnarope_stupid_gha_network
         run: |
           cd /workspace
+          RETRIES=5
+          export PGPASSWORD=linnarope
+          until psql -h db -U linnarope -d linnarope -c "select 1" > /dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
+            echo "Waiting for postgres server, $((RETRIES--)) remaining attempts..."
+            sleep 1
+          done
+          
           make deps
-          make test-junit-gha -j20
+          make test TEST_FLAGS=--json-reporter 
 
     - name: debug
       if: success() || failure()
-      run: find . -name '*result-junit.xml'
+      run: find . -name '*test-output.json.xml'
       
     - name: Publish Test Report
       uses: mikepenz/action-junit-report@v5
