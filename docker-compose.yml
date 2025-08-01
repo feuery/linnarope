@@ -15,4 +15,3 @@ services:
       
 networks:
   stupid_gha_network:
-    driver: bridge

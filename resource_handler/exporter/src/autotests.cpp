@@ -11,7 +11,11 @@
 
 std::vector<Test> AutoTests::get_tests() {
   std::vector<Test> acc;
+  assert(isTest);
   std::string psql_connstring = postgres_connstring();
+
+  printf("istest? %s \nexporter's connstring:%s\n", isTest? "TRUE": "FALSE", psql_connstring.c_str());
+  
   std::string test_sqlite_url = "./test.export";
 
   acc.push_back(Test([=](std::vector<Result>& results){
